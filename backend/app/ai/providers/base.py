@@ -11,3 +11,6 @@ class LLMProvider(ABC):
     @abstractmethod
     async def embed(self, text: str) -> list[float]:
         raise NotImplementedError
+
+    async def classify_intent(self, message: str) -> str:
+        return "{}"

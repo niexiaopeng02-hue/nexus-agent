@@ -1,4 +1,5 @@
 import hashlib
+import json
 import math
 import re
 
@@ -40,3 +41,17 @@ class MockProvider(LLMProvider):
             vector[index] += 1.0
         norm = math.sqrt(sum(value * value for value in vector)) or 1.0
         return [value / norm for value in vector]
+
+    async def classify_intent(self, message: str) -> str:
+        text = message.lower()
+        if "malformed" in text:
+            return "{not-json"
+        if "ambiguous" in text:
+            return json.dumps(
+                {"intent": "knowledge_query", "confidence": 0.21, "entities": {}, "requires_tool": False, "requires_human": False}
+            )
+        if "quantum toaster" in text:
+            return json.dumps({"intent": "unknown", "confidence": 0.82, "entities": {}, "requires_tool": False, "requires_human": False})
+        return json.dumps(
+            {"intent": "general_conversation", "confidence": 0.72, "entities": {}, "requires_tool": False, "requires_human": False}
+        )

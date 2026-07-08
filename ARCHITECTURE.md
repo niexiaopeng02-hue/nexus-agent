@@ -19,7 +19,7 @@ flowchart LR
 
 ## RAG Flow
 
-Documents are cleaned, split with paragraph-aware chunking, embedded, and stored as chunks with document metadata. Retrieval embeds the user query, ranks chunks by cosine similarity, and returns citations derived only from retrieved chunks. The default mock provider uses deterministic hash embeddings so demos and tests work without secrets.
+Documents are parsed by file type, cleaned, split with paragraph-aware chunking, embedded, and stored in PostgreSQL as chunks with pgvector embeddings and document metadata. Retrieval embeds the user query and, on PostgreSQL, executes a pgvector cosine-distance query ordered by nearest chunks. Citations are derived only from returned database rows. The default mock provider uses deterministic 64-dimensional hash embeddings so demos and tests work without secrets.
 
 ## Agent Routing
 
@@ -36,5 +36,10 @@ Routing is explicit:
 
 ## Data Storage
 
-Production schema targets PostgreSQL with pgvector. The demo runtime also includes an in-memory store so the application can run in constrained portfolio environments without a local database.
+Runtime data access goes through async SQLAlchemy repositories. The production path targets PostgreSQL with pgvector. Unit tests use SQLite as an isolation strategy, while pgvector integration tests run when `PGVECTOR_TEST_DATABASE_URL` is available.
 
+## Parser Flow
+
+- PDF: PyMuPDF reads text per page and preserves `page_number`.
+- DOCX: python-docx reads paragraphs.
+- TXT/Markdown: UTF-8 text parsing.

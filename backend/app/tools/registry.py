@@ -1,8 +1,8 @@
 from collections.abc import Awaitable, Callable
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.services.store import store
+from app.repositories import BusinessRepository
 
 
 class OrderInput(BaseModel):
@@ -33,43 +33,39 @@ class ToolDefinition(BaseModel):
     name: str
     description: str
     input_model: type[BaseModel]
-    handler: Callable[[BaseModel], Awaitable[dict]]
+    handler: Callable[[BusinessRepository, BaseModel], Awaitable[dict]]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-async def get_order_status(payload: BaseModel) -> dict:
+async def get_order_status(repo: BusinessRepository, payload: BaseModel) -> dict:
     data = payload.model_dump()
-    order = store.orders.get(data["order_id"])
+    order = await repo.get_order(data["order_id"])
     if not order:
         return {"found": False, "message": "Order not found"}
     return {"found": True, **order}
 
 
-async def check_inventory(payload: BaseModel) -> dict:
+async def check_inventory(repo: BusinessRepository, payload: BaseModel) -> dict:
     data = payload.model_dump()
-    inventory = store.inventory.get(data["product_id"])
+    inventory = await repo.get_inventory(data["product_id"])
     if not inventory:
         return {"found": False, "message": "Inventory record not found"}
-    product = store.products.get(data["product_id"], {})
-    return {"found": True, "product_name": product.get("name"), **inventory}
+    return {"found": True, **inventory}
 
 
-async def search_products(payload: BaseModel) -> dict:
+async def search_products(repo: BusinessRepository, payload: BaseModel) -> dict:
     query = payload.model_dump()["query"].lower()
-    matches = [
-        product for product in store.products.values() if query in product["name"].lower() or query in product["description"].lower()
-    ]
+    matches = await repo.search_products(query)
     return {"results": matches}
 
 
-async def create_support_ticket(payload: BaseModel) -> dict:
-    return store.create_ticket(**payload.model_dump())
+async def create_support_ticket(repo: BusinessRepository, payload: BaseModel) -> dict:
+    return await repo.create_ticket(**payload.model_dump())
 
 
-async def create_handoff_request(payload: BaseModel) -> dict:
-    return store.create_handoff(**payload.model_dump())
+async def create_handoff_request(repo: BusinessRepository, payload: BaseModel) -> dict:
+    return await repo.create_handoff(**payload.model_dump())
 
 
 TOOLS: dict[str, ToolDefinition] = {
@@ -97,13 +93,13 @@ TOOLS: dict[str, ToolDefinition] = {
 }
 
 
-async def execute_tool(name: str, raw_input: dict) -> dict:
+async def execute_tool(repo: BusinessRepository, name: str, raw_input: dict) -> dict:
     tool = TOOLS[name]
     payload = tool.input_model(**raw_input)
     try:
-        output = await tool.handler(payload)
-        store.tool_logs.append({"tool_name": name, "status": "success", "input": raw_input, "output": output})
+        output = await tool.handler(repo, payload)
+        await repo.log_tool(name, "success", raw_input, output)
         return output
     except Exception as exc:
-        store.tool_logs.append({"tool_name": name, "status": "error", "input": raw_input, "error": str(exc)})
+        await repo.log_tool(name, "error", raw_input, {"error": str(exc)})
         raise

@@ -7,19 +7,26 @@ from metrics import summarize
 
 from app.agent.router import route_message
 from app.ai.providers.mock_provider import MockProvider
-from app.rag.ingestion import ingest_sample_documents
-from app.services.store import store
+from app.db.init_db import create_schema, drop_schema
+from app.db.seed import seed_demo_data
+from app.db.session import configure_database
 
 
 async def main() -> None:
-    store.reset()
+    configure_database("sqlite+aiosqlite:///./eval_nexusagent.db")
+    from app.db import session as db_session
+
     provider = MockProvider()
-    await ingest_sample_documents(provider)
+    await drop_schema(db_session.engine)
+    await create_schema(db_session.engine)
+    async with db_session.AsyncSessionLocal() as session:
+        await seed_demo_data(session, provider)
     dataset = json.loads((Path(__file__).parent / "dataset.json").read_text(encoding="utf-8"))
     results = []
     for item in dataset:
         started = time.perf_counter()
-        response = await route_message(item["query"], None, provider)
+        async with db_session.AsyncSessionLocal() as session:
+            response = await route_message(item["query"], None, provider, session)
         latency_ms = int((time.perf_counter() - started) * 1000)
         expected_tool = item.get("expected_tool")
         actual_tool = response.tool_executions[0].tool_name if response.tool_executions else None

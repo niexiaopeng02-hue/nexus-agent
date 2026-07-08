@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -15,52 +17,52 @@ class TimestampMixin:
 
 class User(Base, TimestampMixin):
     __tablename__ = "users"
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     role: Mapped[str] = mapped_column(String(40), default="admin")
-    password_hash: Mapped[str | None] = mapped_column(String(255))
+    password_hash: Mapped[Optional[str]] = mapped_column(String(255))
 
 
 class Document(Base, TimestampMixin):
     __tablename__ = "documents"
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
     status: Mapped[str] = mapped_column(String(40), index=True)
 
 
 class DocumentChunk(Base, TimestampMixin):
     __tablename__ = "document_chunks"
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
-    document_id: Mapped[str] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"), index=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    document_id: Mapped[str] = mapped_column(String(64), ForeignKey("documents.id", ondelete="CASCADE"), index=True)
     chunk_index: Mapped[int] = mapped_column(Integer)
-    page_number: Mapped[int | None] = mapped_column(Integer)
+    page_number: Mapped[Optional[int]] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(Text)
-    embedding: Mapped[list[float]] = mapped_column(Vector(1536))
+    embedding: Mapped[list[float]] = mapped_column(Vector(64))
 
 
 class Conversation(Base, TimestampMixin):
     __tablename__ = "conversations"
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
     title: Mapped[str] = mapped_column(String(255))
 
 
 class Message(Base, TimestampMixin):
     __tablename__ = "messages"
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
-    conversation_id: Mapped[str] = mapped_column(ForeignKey("conversations.id", ondelete="CASCADE"), index=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(String(64), ForeignKey("conversations.id", ondelete="CASCADE"), index=True)
     role: Mapped[str] = mapped_column(String(40))
     content: Mapped[str] = mapped_column(Text)
-    intent: Mapped[str | None] = mapped_column(String(80), index=True)
-    citations: Mapped[dict | None] = mapped_column(JSONB)
+    intent: Mapped[Optional[str]] = mapped_column(String(80), index=True)
+    citations: Mapped[Optional[dict]] = mapped_column(JSON)
 
 
 class Order(Base, TimestampMixin):
     __tablename__ = "orders"
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     status: Mapped[str] = mapped_column(String(80), index=True)
-    carrier: Mapped[str | None] = mapped_column(String(80))
-    tracking_number: Mapped[str | None] = mapped_column(String(80))
-    estimated_delivery: Mapped[str | None] = mapped_column(String(40))
+    carrier: Mapped[Optional[str]] = mapped_column(String(80))
+    tracking_number: Mapped[Optional[str]] = mapped_column(String(80))
+    estimated_delivery: Mapped[Optional[str]] = mapped_column(String(40))
 
 
 class Product(Base, TimestampMixin):
@@ -95,8 +97,8 @@ class HandoffRequest(Base, TimestampMixin):
 
 class ToolExecutionLog(Base, TimestampMixin):
     __tablename__ = "tool_execution_logs"
-    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
     tool_name: Mapped[str] = mapped_column(String(120), index=True)
     status: Mapped[str] = mapped_column(String(40), index=True)
-    input: Mapped[dict] = mapped_column(JSONB)
-    output: Mapped[dict | None] = mapped_column(JSONB)
+    input: Mapped[dict] = mapped_column(JSON)
+    output: Mapped[Optional[dict]] = mapped_column(JSON)

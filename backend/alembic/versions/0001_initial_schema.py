@@ -20,7 +20,7 @@ def upgrade() -> None:
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
     op.create_table(
         "users",
-        sa.Column("id", sa.UUID(), primary_key=True),
+        sa.Column("id", sa.String(64), primary_key=True),
         sa.Column("email", sa.String(255), nullable=False),
         sa.Column("role", sa.String(40), nullable=False),
         sa.Column("password_hash", sa.String(255)),
@@ -30,7 +30,7 @@ def upgrade() -> None:
     op.create_index("ix_users_email", "users", ["email"], unique=True)
     op.create_table(
         "documents",
-        sa.Column("id", sa.UUID(), primary_key=True),
+        sa.Column("id", sa.String(64), primary_key=True),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("status", sa.String(40), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
@@ -39,27 +39,27 @@ def upgrade() -> None:
     op.create_index("ix_documents_status", "documents", ["status"])
     op.create_table(
         "document_chunks",
-        sa.Column("id", sa.UUID(), primary_key=True),
-        sa.Column("document_id", sa.UUID(), sa.ForeignKey("documents.id", ondelete="CASCADE")),
+        sa.Column("id", sa.String(64), primary_key=True),
+        sa.Column("document_id", sa.String(64), sa.ForeignKey("documents.id", ondelete="CASCADE")),
         sa.Column("chunk_index", sa.Integer(), nullable=False),
         sa.Column("page_number", sa.Integer()),
         sa.Column("content", sa.Text(), nullable=False),
-        sa.Column("embedding", Vector(1536)),
+        sa.Column("embedding", Vector(64)),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
     op.create_index("ix_document_chunks_document_id", "document_chunks", ["document_id"])
     op.create_table(
         "conversations",
-        sa.Column("id", sa.UUID(), primary_key=True),
+        sa.Column("id", sa.String(64), primary_key=True),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
     op.create_table(
         "messages",
-        sa.Column("id", sa.UUID(), primary_key=True),
-        sa.Column("conversation_id", sa.UUID(), sa.ForeignKey("conversations.id", ondelete="CASCADE")),
+        sa.Column("id", sa.String(64), primary_key=True),
+        sa.Column("conversation_id", sa.String(64), sa.ForeignKey("conversations.id", ondelete="CASCADE")),
         sa.Column("role", sa.String(40), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("intent", sa.String(80)),
@@ -113,7 +113,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "tool_execution_logs",
-        sa.Column("id", sa.UUID(), primary_key=True),
+        sa.Column("id", sa.String(64), primary_key=True),
         sa.Column("tool_name", sa.String(120), nullable=False),
         sa.Column("status", sa.String(40), nullable=False),
         sa.Column("input", sa.JSON(), nullable=False),

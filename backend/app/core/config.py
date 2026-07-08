@@ -9,13 +9,15 @@ class Settings(BaseSettings):
     environment: str = "development"
     api_prefix: str = "/api"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
-    database_url: str = "postgresql+psycopg://nexus:nexus@postgres:5432/nexusagent"
+    database_url: str = "postgresql+psycopg://nexus:nexus@localhost:5432/nexusagent"
+    test_database_url: str | None = None
     openai_api_key: str | None = None
     llm_provider: str = "mock"
     upload_max_bytes: int = 5_000_000
     allowed_upload_extensions: str = ".pdf,.docx,.txt,.md,.markdown"
     log_level: str = "INFO"
     secret_key: str = Field(default="demo-only-change-me", min_length=8)
+    embedding_dimension: int = 64
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

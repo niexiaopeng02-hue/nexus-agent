@@ -25,4 +25,27 @@ class OpenAIProvider(LLMProvider):
 
         client = AsyncOpenAI(api_key=self.api_key)
         response = await client.embeddings.create(model="text-embedding-3-small", input=text)
-        return response.data[0].embedding
+        embedding = response.data[0].embedding
+        return (embedding[:64] + [0.0] * 64)[:64]
+
+    async def classify_intent(self, message: str) -> str:
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(api_key=self.api_key)
+        response = await client.chat.completions.create(
+            model="gpt-4.1-mini",
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Return only JSON with keys intent, confidence, entities, requires_tool, requires_human. "
+                        "Supported intents: knowledge_query, order_query, product_query, inventory_query, refund_request, "
+                        "technical_support, create_ticket, human_handoff, general_conversation, unknown."
+                    ),
+                },
+                {"role": "user", "content": message},
+            ],
+            temperature=0,
+        )
+        return response.choices[0].message.content or "{}"

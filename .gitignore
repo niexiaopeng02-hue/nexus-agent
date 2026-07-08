@@ -9,5 +9,5 @@ dist/
 build/
 *.pyc
 *.log
+*.db
 uploads/
-

@@ -25,9 +25,13 @@
 - Frontend typecheck passed.
 - Frontend production build passed.
 - Backend app import/start object check passed.
+- Runtime path migrated from global `DemoStore` to async SQLAlchemy repositories.
+- PDF/DOCX/TXT/Markdown parser abstraction implemented.
+- Nginx production reverse proxy for `/api/` added.
 
 ## Not Completed
 
 - Live hosted deployment.
 - Real authentication beyond documented demo posture.
 - Runtime Docker startup verification. Docker CLI is not installed or not available in this local environment.
+- Local pgvector integration execution. `PGVECTOR_TEST_DATABASE_URL` was not configured locally, so pgvector-specific tests were skipped here and are configured for CI.

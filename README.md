@@ -18,7 +18,7 @@ No hosted demo is configured yet. The project is designed to run locally with mo
 - Conversation memory and admin views for documents, tickets, conversations, and analytics.
 - Deterministic mock LLM provider for demos, tests, and CI without secrets.
 - OpenAI provider abstraction for production model and embedding calls.
-- PostgreSQL + pgvector schema with Alembic migration.
+- Async SQLAlchemy repository layer backed by PostgreSQL + pgvector, with Alembic migration.
 - Docker Compose setup and GitHub Actions CI.
 
 ## Architecture
@@ -51,7 +51,7 @@ NexusAgent is not a simple chatbot wrapper. It separates intent classification, 
 
 ## RAG Pipeline
 
-Documents are cleaned, split with paragraph-aware chunking, embedded, and searched by cosine similarity. Chunk metadata includes document id, document name, chunk index, page number when available, and content snippet. The default mock provider uses deterministic embeddings so the project works without `OPENAI_API_KEY`.
+Documents are parsed by file type, cleaned, split with paragraph-aware chunking, embedded, and stored in `document_chunks.embedding` as a pgvector column. PostgreSQL retrieval orders by cosine distance and returns top-k chunks above the configured threshold. Chunk metadata includes document id, document name, chunk index, page number when available, and content snippet. The default mock provider uses deterministic 64-dimensional embeddings so the project works without `OPENAI_API_KEY`.
 
 ## Agent Routing
 
@@ -75,9 +75,9 @@ The backend includes `backend/evals` with 15 deterministic cases. Metrics includ
 
 ## Tech Stack
 
-- Backend: Python, FastAPI, Pydantic, SQLAlchemy 2.x, Alembic
+- Backend: Python, FastAPI, Pydantic, Async SQLAlchemy 2.x, Alembic
 - AI: provider abstraction, OpenAI-ready provider, deterministic mock provider
-- RAG: PostgreSQL + pgvector schema, embeddings, vector search interface
+- RAG: PostgreSQL + pgvector, DB-backed cosine vector search, PDF/DOCX/TXT/Markdown parsing
 - Frontend: React, TypeScript, Vite, React Router, TanStack Query, Lucide React
 - Quality: pytest, pytest-asyncio, httpx, Ruff, mypy-ready config
 - Delivery: Docker, Docker Compose, GitHub Actions
@@ -185,20 +185,17 @@ Key decisions are documented in `DECISIONS.md`: PostgreSQL + pgvector, explicit 
 
 ## Known Limitations
 
-- Runtime demo persistence is in-memory; production repositories should connect the service layer to PostgreSQL.
-- PDF and DOCX uploads are accepted by policy, but the current demo extraction path treats uploaded bytes as text.
+- Local unit tests use SQLite for fast isolation; pgvector integration tests require `PGVECTOR_TEST_DATABASE_URL`.
+- OpenAI embeddings are normalized to the configured 64-dimensional storage shape in this demo. A production system should choose and migrate a single embedding dimensionality intentionally.
 - Real authentication and role-based authorization are intentionally not fully implemented.
 - Docker runtime verification depends on local Docker availability.
 
 ## Future Improvements
 
-- SQLAlchemy repositories wired into all services.
-- Dedicated PDF/DOCX parsers with page-level metadata.
-- Database integration tests against pgvector.
+- Broader database integration tests for migrations and rollback behavior.
 - Production authentication and authorization.
 - Hosted deployment with managed Postgres and CI-based migrations.
 
 ## License
 
 MIT
-
