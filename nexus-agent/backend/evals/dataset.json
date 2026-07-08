@@ -1,0 +1,18 @@
+[
+  {"query": "What is NovaTech's return policy?", "expected_intent": "knowledge_query", "must_have_citation": true},
+  {"query": "How long do I have to return headphones?", "expected_intent": "knowledge_query", "must_have_citation": true},
+  {"query": "Tell me about warranty coverage", "expected_intent": "knowledge_query", "must_have_citation": true},
+  {"query": "What shipping timeline should I expect?", "expected_intent": "knowledge_query", "must_have_citation": true},
+  {"query": "Where is order ORD-10001?", "expected_intent": "order_query", "expected_tool": "get_order_status"},
+  {"query": "Check ORD-10002 please", "expected_intent": "order_query", "expected_tool": "get_order_status"},
+  {"query": "Is the Wireless Headphones product in stock?", "expected_intent": "inventory_query", "expected_tool": "check_inventory"},
+  {"query": "Is Product X available?", "expected_intent": "inventory_query", "expected_tool": "check_inventory"},
+  {"query": "Do you have Smart Keyboard inventory?", "expected_intent": "inventory_query", "expected_tool": "check_inventory"},
+  {"query": "Search for keyboard products", "expected_intent": "product_query", "expected_tool": "search_products"},
+  {"query": "My keyboard stopped working. Please create a support ticket.", "expected_intent": "create_ticket", "expected_tool": "create_support_ticket"},
+  {"query": "My product stopped working after two days. I need support.", "expected_intent": "create_ticket", "expected_tool": "create_support_ticket"},
+  {"query": "I need a human agent", "expected_intent": "human_handoff", "expected_tool": "create_handoff_request"},
+  {"query": "Do you offer drone insurance?", "expected_intent": "knowledge_query", "must_refuse": true},
+  {"query": "What is your policy for motorcycle batteries?", "expected_intent": "knowledge_query", "must_refuse": true}
+]
+

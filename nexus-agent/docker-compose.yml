@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexus
+      POSTGRES_DB: nexusagent
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      ENVIRONMENT: development
+      LLM_PROVIDER: mock
+      DATABASE_URL: postgresql+psycopg://nexus:nexus@postgres:5432/nexusagent
+      CORS_ORIGINS: http://localhost:5173,http://localhost
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres_data:
+
