@@ -24,7 +24,8 @@ from app.schemas.domain import AnalyticsOverview, DocumentView, TicketCreate, Ti
 async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(settings.log_level)
-    await create_schema(db_session.engine)
+    if settings.auto_create_schema:
+        await create_schema(db_session.engine)
     async with get_session_context() as session:
         await seed_demo_data(session, get_provider())
     yield

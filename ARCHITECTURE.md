@@ -45,6 +45,8 @@ FastAPI injects an `AsyncSession` with `get_session`. APIs should not access glo
 
 No-context behavior is threshold-driven by `RAG_SIMILARITY_THRESHOLD`; citations are created only from retrieved chunks.
 
+Migration `0002` explicitly deletes old pre-production document/chunk rows before changing legacy `vector(64)` storage to `vector(256)`. This avoids pretending existing 64-dimensional embeddings can be safely resized in place.
+
 ## Parsing
 
 - PDF: PyMuPDF reads per page and preserves `page_number`.
@@ -67,3 +69,5 @@ Unvalidated JSON never enters the business routing layer.
 ## Docker Routing
 
 The production frontend image uses Nginx. `/api/` is proxied to `http://backend:8000/api/`, and SPA routes fall back to `/index.html`.
+
+The backend Docker command runs `alembic upgrade head` before Uvicorn. Docker sets `AUTO_CREATE_SCHEMA=false` so schema management is handled by Alembic rather than runtime `create_all`.

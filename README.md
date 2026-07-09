@@ -102,6 +102,8 @@ docker compose up --build
 
 Compose defines PostgreSQL with `pgvector/pgvector:pg16`, the FastAPI backend, and an Nginx frontend image. `frontend/nginx.conf` proxies `/api/` to `http://backend:8000/api/` and uses SPA fallback with `try_files`.
 
+The backend container runs `alembic upgrade head` before starting Uvicorn. In Docker, `AUTO_CREATE_SCHEMA=false` avoids mixing `create_all` with Alembic migrations.
+
 ## Evaluation
 
 ```bash
@@ -130,6 +132,18 @@ npm run build
 
 `pytest -m integration` requires `PGVECTOR_TEST_DATABASE_URL`. Without it, those tests are skipped locally and run in CI.
 
+Smoke tests for a running API:
+
+```bash
+python scripts/smoke_test.py
+```
+
+Set `NEXUS_API_BASE_URL` to test a deployed backend.
+
+## Deployment
+
+Deployment options are documented in `DEPLOYMENT.md`. The project is not deployed yet.
+
 ## Screenshots
 
 Screenshot capture is tracked under `docs/screenshots/README.md`. No generated screenshots are committed yet.
@@ -140,6 +154,7 @@ Screenshot capture is tracked under `docs/screenshots/README.md`. No generated s
 - Local pgvector integration requires a running PostgreSQL/pgvector database.
 - Docker runtime verification requires Docker to be installed locally.
 - Mock embeddings are deterministic and useful for tests, but OpenAI embeddings should be used for realistic retrieval quality.
+- Migration `0002` intentionally deletes pre-production 64-dimensional document/chunk embeddings before switching to `Vector(256)`. Re-upload or reseed documents after upgrading old local databases.
 
 ## License
 

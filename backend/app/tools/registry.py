@@ -1,8 +1,11 @@
+import logging
 from collections.abc import Awaitable, Callable
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.repositories import BusinessRepository
+
+logger = logging.getLogger(__name__)
 
 
 class OrderInput(BaseModel):
@@ -123,7 +126,8 @@ async def execute_tool(repo: BusinessRepository, name: str, raw_input: dict) -> 
         payload = tool.input_model(**raw_input)
     except ValidationError as exc:
         error = ToolInputError("Tool input did not match its schema.")
-        await repo.log_tool(name, "failed", raw_input, error_code=error.code, error_message=str(exc))
+        logger.info("Tool input validation failed for %s", name, exc_info=exc)
+        await repo.log_tool(name, "failed", raw_input, error_code=error.code, error_message=error.message)
         raise error from exc
     try:
         output = await tool.handler(repo, payload)
@@ -132,6 +136,7 @@ async def execute_tool(repo: BusinessRepository, name: str, raw_input: dict) -> 
     except ToolExecutionError:
         raise
     except Exception as exc:
-        error = ToolHandlerError("Tool handler failed.")
-        await repo.log_tool(name, "failed", raw_input, error_code=error.code, error_message=str(exc))
+        error = ToolHandlerError("Internal tool execution failed.")
+        logger.exception("Tool handler failed for %s", name)
+        await repo.log_tool(name, "failed", raw_input, error_code=error.code, error_message=error.message)
         raise error from exc

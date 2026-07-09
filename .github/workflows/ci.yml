@@ -27,27 +27,39 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - run: ruff check .
-      - run: pytest -m "not integration"
-      - run: pytest -m integration
-      - run: PYTHONPATH=. python evals/run_eval.py
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+      - name: Backend lint
+        run: ruff check .
+      - name: Backend unit tests
+        run: pytest -m "not integration"
+      - name: PostgreSQL integration tests
+        run: pytest -m integration
+      - name: Evaluation pipeline
+        run: PYTHONPATH=. python evals/run_eval.py
   frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run build
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Frontend typecheck
+        run: npm run typecheck
+      - name: Frontend production build
+        run: npm run build

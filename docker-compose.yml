@@ -23,6 +23,7 @@ services:
       LLM_PROVIDER: mock
       DATABASE_URL: postgresql+psycopg://nexus:nexus@postgres:5432/nexusagent
       CORS_ORIGINS: http://localhost:5173,http://localhost
+      AUTO_CREATE_SCHEMA: "false"
     depends_on:
       postgres:
         condition: service_healthy

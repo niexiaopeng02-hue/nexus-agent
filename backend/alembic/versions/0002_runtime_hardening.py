@@ -16,6 +16,10 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Pre-production portfolio migration: old 64-dimensional embeddings cannot be
+    # safely resized in place. Drop existing documents/chunks and let demo seeding
+    # or document re-upload regenerate 256-dimensional embeddings after upgrade.
+    op.execute("DELETE FROM documents")
     op.execute("ALTER TABLE document_chunks ALTER COLUMN embedding TYPE vector(256)")
 
     op.alter_column("support_tickets", "id", type_=sa.String(64))
@@ -57,7 +61,7 @@ def upgrade() -> None:
         sa.Column("tool_ms", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("citation_count", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("tool_count", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("success", sa.Float(), nullable=False, server_default="1"),
+        sa.Column("success", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )

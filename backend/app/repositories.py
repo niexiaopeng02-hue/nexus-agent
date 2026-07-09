@@ -233,7 +233,7 @@ class BusinessRepository:
     async def create_ticket(
         self, summary: str, category: str = "technical_support", priority: str = "normal", customer_email: str | None = None
     ) -> dict:
-        public_id = f"TCK-{uuid4().hex[:8].upper()}"
+        public_id = f"TCK-{uuid4().hex[:12].upper()}"
         ticket = tables.SupportTicket(
             id=str(uuid4()),
             public_id=public_id,
@@ -293,7 +293,7 @@ class BusinessRepository:
         ]
 
     async def create_handoff(self, reason: str, conversation_id: str | None = None) -> dict:
-        public_id = f"HND-{uuid4().hex[:8].upper()}"
+        public_id = f"HND-{uuid4().hex[:12].upper()}"
         handoff = tables.HandoffRequest(
             id=str(uuid4()),
             public_id=public_id,
@@ -358,7 +358,7 @@ class BusinessRepository:
                 tool_ms=tool_ms,
                 citation_count=citation_count,
                 tool_count=tool_count,
-                success=1.0 if success else 0.0,
+                success=success,
             )
         )
         await self.session.commit()

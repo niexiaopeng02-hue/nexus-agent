@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     secret_key: str = Field(default="demo-only-change-me", min_length=8)
     embedding_dimensions: int = 256
     rag_similarity_threshold: float = 0.18
+    auto_create_schema: bool = True
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

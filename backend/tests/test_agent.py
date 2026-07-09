@@ -70,12 +70,30 @@ async def test_product_search_tool(db_session):
 async def test_ticket_creation_tool(db_session):
     output = await execute_tool(BusinessRepository(db_session), "create_support_ticket", {"summary": "Device stopped working"})
     assert output["id"].startswith("TCK-")
+    assert len(output["id"]) == len("TCK-") + 12
 
 
 @pytest.mark.asyncio
 async def test_handoff_tool(db_session):
     output = await execute_tool(BusinessRepository(db_session), "create_handoff_request", {"reason": "Need human help"})
     assert output["id"].startswith("HND-")
+    assert len(output["id"]) == len("HND-") + 12
+
+
+@pytest.mark.asyncio
+async def test_ticket_public_ids_are_unique_under_fast_creation(db_session):
+    repo = BusinessRepository(db_session)
+    ids = [(await repo.create_ticket(f"Bulk ticket {index}"))["id"] for index in range(100)]
+    assert len(ids) == len(set(ids))
+    assert all(item.startswith("TCK-") and len(item) == 16 for item in ids)
+
+
+@pytest.mark.asyncio
+async def test_handoff_public_ids_are_unique_under_fast_creation(db_session):
+    repo = BusinessRepository(db_session)
+    ids = [(await repo.create_handoff(f"Bulk handoff {index}"))["id"] for index in range(100)]
+    assert len(ids) == len(set(ids))
+    assert all(item.startswith("HND-") and len(item) == 16 for item in ids)
 
 
 @pytest.mark.asyncio
@@ -113,12 +131,13 @@ async def test_invalid_tool_input_is_logged_as_failure(db_session):
         await execute_tool(repo, "get_order_status", {})
     log = await db_session.scalar(select(tables.ToolExecutionLog).where(tables.ToolExecutionLog.error_code == "TOOL_INPUT_INVALID"))
     assert log is not None
+    assert log.error_message == "Tool input did not match its schema."
 
 
 @pytest.mark.asyncio
 async def test_tool_handler_exception_is_logged_as_failure(db_session, monkeypatch):
     async def broken_get_order(*_args):
-        raise RuntimeError("database outage")
+        raise RuntimeError("database outage with sensitive connection detail")
 
     from app.tools import registry
 
@@ -129,6 +148,23 @@ async def test_tool_handler_exception_is_logged_as_failure(db_session, monkeypat
         await execute_tool(repo, "get_order_status", {"order_id": "ORD-10001"})
     log = await db_session.scalar(select(tables.ToolExecutionLog).where(tables.ToolExecutionLog.error_code == "TOOL_HANDLER_FAILED"))
     assert log is not None
+    assert log.error_message == "Internal tool execution failed."
+    assert "secret" not in log.error_message
+
+
+@pytest.mark.asyncio
+async def test_chat_api_tool_failure_returns_safe_message(db_session, monkeypatch):
+    async def broken_get_order(*_args):
+        raise RuntimeError("driver exception with password=secret")
+
+    from app.tools import registry
+
+    original = registry.TOOLS["get_order_status"]
+    monkeypatch.setitem(registry.TOOLS, "get_order_status", original.model_copy(update={"handler": broken_get_order}))
+    response = await route_message("Where is order ORD-10001?", None, MockProvider(), db_session)
+    assert response.tool_executions[0].status == "failed"
+    assert response.tool_executions[0].error_message == "Internal tool execution failed."
+    assert "secret" not in response.answer
 
 
 @pytest.mark.asyncio
@@ -153,3 +189,4 @@ async def test_route_message_persists_request_metrics(db_session):
     assert metric is not None
     assert metric.intent == "knowledge_query"
     assert metric.citation_count == len(response.citations)
+    assert metric.success is True

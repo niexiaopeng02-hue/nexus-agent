@@ -6,7 +6,7 @@
     "citation_presence": 1.0,
     "expected_document_accuracy": 1.0,
     "no_context_refusal_rate": 1.0,
-    "average_latency_ms": 46.44
+    "average_latency_ms": 63.94
   },
   "results": [
     {
@@ -21,7 +21,7 @@
       "citation_ok": true,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 56
+      "latency_ms": 89
     },
     {
       "id": "rag-return-002",
@@ -35,7 +35,7 @@
       "citation_ok": true,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 34
+      "latency_ms": 43
     },
     {
       "id": "rag-warranty-001",
@@ -49,7 +49,7 @@
       "citation_ok": true,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 37
+      "latency_ms": 40
     },
     {
       "id": "rag-shipping-001",
@@ -63,7 +63,7 @@
       "citation_ok": true,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 31
+      "latency_ms": 40
     },
     {
       "id": "tool-order-001",
@@ -77,7 +77,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 42
+      "latency_ms": 56
     },
     {
       "id": "tool-order-002",
@@ -91,7 +91,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 38
+      "latency_ms": 63
     },
     {
       "id": "tool-inventory-001",
@@ -105,7 +105,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 39
+      "latency_ms": 59
     },
     {
       "id": "tool-inventory-002",
@@ -119,7 +119,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 45
+      "latency_ms": 57
     },
     {
       "id": "tool-inventory-003",
@@ -133,7 +133,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 53
+      "latency_ms": 62
     },
     {
       "id": "tool-product-001",
@@ -147,7 +147,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 54
+      "latency_ms": 146
     },
     {
       "id": "tool-ticket-001",
@@ -161,7 +161,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 60
+      "latency_ms": 72
     },
     {
       "id": "tool-ticket-002",
@@ -175,7 +175,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 66
+      "latency_ms": 74
     },
     {
       "id": "tool-handoff-001",
@@ -189,7 +189,7 @@
       "citation_ok": false,
       "must_refuse": false,
       "refusal_ok": false,
-      "latency_ms": 63
+      "latency_ms": 69
     },
     {
       "id": "no-context-001",
@@ -203,7 +203,7 @@
       "citation_ok": false,
       "must_refuse": true,
       "refusal_ok": true,
-      "latency_ms": 45
+      "latency_ms": 50
     },
     {
       "id": "no-context-002",
@@ -217,7 +217,7 @@
       "citation_ok": false,
       "must_refuse": true,
       "refusal_ok": true,
-      "latency_ms": 40
+      "latency_ms": 50
     },
     {
       "id": "unknown-001",
@@ -231,7 +231,7 @@
       "citation_ok": false,
       "must_refuse": true,
       "refusal_ok": true,
-      "latency_ms": 40
+      "latency_ms": 53
     }
   ]
 }

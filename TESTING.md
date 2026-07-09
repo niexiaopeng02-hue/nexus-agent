@@ -13,8 +13,8 @@ PYTHONPATH=. python evals/run_eval.py
 Latest local results:
 
 - `ruff check .`: passed.
-- `pytest -m "not integration"`: `31 passed, 2 deselected`.
-- `pytest -m integration`: `3 skipped, 31 deselected` because `PGVECTOR_TEST_DATABASE_URL` was not configured locally.
+- `pytest -m "not integration"`: `34 passed, 5 deselected`.
+- `pytest -m integration`: `5 skipped, 34 deselected` because `PGVECTOR_TEST_DATABASE_URL` was not configured locally.
 - `PYTHONPATH=. python evals/run_eval.py`: 16 cases with intent, tool selection, citation, expected document, and no-context metrics at `1.0`.
 
 ## Integration Tests
@@ -26,7 +26,15 @@ set PGVECTOR_TEST_DATABASE_URL=postgresql+psycopg://nexus:nexus@localhost:5432/n
 pytest -m integration
 ```
 
-The integration suite covers migration apply, pgvector search, document/chunk insert, citation retrieval, conversation persistence, ticket persistence, tool log persistence, request metrics, and document delete cascade.
+The integration suite covers migration apply, 0001 to head upgrade behavior, pgvector extension, vector dimension checks, wrong-dimension rejection, pgvector search, threshold filtering, document/chunk insert, citation retrieval, conversation persistence, message persistence, ticket persistence, handoff persistence, customer email persistence, conversation id persistence, success/failed tool logs, request metrics, and document delete cascade.
+
+## Smoke Test
+
+```bash
+python scripts/smoke_test.py
+```
+
+Latest local result: passed against a local SQLite-backed FastAPI runtime. Set `NEXUS_API_BASE_URL` for Docker or deployed environments.
 
 ## Frontend Commands
 

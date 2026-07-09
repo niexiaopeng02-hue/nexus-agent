@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -122,4 +122,4 @@ class RequestMetric(Base, TimestampMixin):
     tool_ms: Mapped[int] = mapped_column(Integer, default=0)
     citation_count: Mapped[int] = mapped_column(Integer, default=0)
     tool_count: Mapped[int] = mapped_column(Integer, default=0)
-    success: Mapped[float] = mapped_column(Float, default=1.0)
+    success: Mapped[bool] = mapped_column(Boolean, default=True)
