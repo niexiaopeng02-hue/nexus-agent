@@ -1,6 +1,19 @@
 # NexusAgent
 
-NexusAgent is a production-oriented AI customer support and knowledge agent for the fictional NovaTech electronics support desk. It is built as a portfolio project to show the engineering behind an LLM application: database-backed RAG, typed tool execution, citations, parser boundaries, deterministic tests, and Docker/CI wiring.
+Production-oriented AI support and knowledge agent with RAG, pgvector retrieval, tool execution, structured intent routing, evaluation, and full-stack deployment readiness.
+
+NexusAgent is a portfolio project for the fictional NovaTech electronics support desk. It shows the engineering behind an LLM application: database-backed RAG, typed tool execution, source citations, parser boundaries, deterministic tests, Docker packaging, and CI wiring.
+
+## Live Demo
+
+Not deployed yet.
+
+- Frontend: pending
+- API Docs: pending
+- Health Check: pending
+- Demo Video: pending
+
+The planned public portfolio demo runs in deterministic MockProvider mode for predictable behavior and zero API-key exposure. OpenAI can be enabled through platform secrets by setting `LLM_PROVIDER=openai` and `OPENAI_API_KEY`.
 
 ## Why This Project Exists
 
@@ -17,6 +30,10 @@ The goal is not to add many chat modes or decorative UI screens. The goal is to 
 - React/Vite frontend with chat, documents, conversations, tickets, and analytics.
 - Docker Compose with PostgreSQL pgvector, backend, and Nginx-served frontend.
 - GitHub Actions backend/frontend CI, including pgvector integration tests.
+
+## Screenshots
+
+No runtime screenshots are committed yet. Screenshot capture guidance is tracked in `docs/screenshots/README.md`.
 
 ## Architecture
 
@@ -143,10 +160,6 @@ Set `NEXUS_API_BASE_URL` to test a deployed backend.
 ## Deployment
 
 Deployment options are documented in `DEPLOYMENT.md`. The project is not deployed yet.
-
-## Screenshots
-
-Screenshot capture is tracked under `docs/screenshots/README.md`. No generated screenshots are committed yet.
 
 ## Known Limits
 

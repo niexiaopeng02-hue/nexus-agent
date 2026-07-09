@@ -1,15 +1,31 @@
-# Upwork Pitch
+# Upwork Portfolio Material
 
-I build production-oriented AI applications, not just chatbot wrappers.
+## Portfolio Title
 
-NexusAgent demonstrates the backend architecture I use for customer-support AI systems: FastAPI, Async SQLAlchemy repositories, PostgreSQL + pgvector retrieval, typed tool execution, validated structured intent classification, PDF/DOCX ingestion, citations tied to retrieved chunks, deterministic tests, and Docker/CI setup.
+AI Customer Support Agent with RAG, pgvector and Business Tool Calling
 
-For client work, this translates into:
+## Short Description
 
-- reliable RAG with auditable citations;
-- safe tool calls for orders, inventory, tickets, and handoffs;
-- local mock mode for testing without API keys;
-- OpenAI provider integration for production runs;
-- clear separation between demo scope and production hardening.
+NexusAgent is a full-stack AI support demo that combines a knowledge base, PDF/DOCX/TXT/Markdown ingestion, citation-backed answers, order lookup, inventory lookup, support ticket creation, and human handoff workflows.
 
-I can adapt this architecture to support desks, internal knowledge bases, ecommerce operations, onboarding assistants, and document-heavy workflows.
+## Skills
+
+- Python
+- FastAPI
+- React
+- TypeScript
+- PostgreSQL
+- pgvector
+- RAG
+- OpenAI API
+- API Integration
+- AI Automation
+- Docker
+
+## Client-Oriented Description
+
+This project demonstrates how an AI assistant can centralize support knowledge, answer questions from business documents, reduce repetitive support work, connect to business APIs, create support tickets, and provide traceable citations. It is built with a deterministic mock provider for public demos and can be configured with OpenAI through secure platform secrets.
+
+## Proposal Reference Paragraph
+
+I recently built NexusAgent, a full-stack AI support system that combines RAG knowledge retrieval, pgvector search, document ingestion, business API tools, ticket creation, and citation-grounded answers. The project includes a FastAPI backend, React frontend, PostgreSQL persistence, evaluation tests, Docker deployment planning, and CI. I can adapt the same architecture to your customer-support or internal-knowledge workflow.

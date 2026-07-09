@@ -34,7 +34,39 @@ Cons:
 - Free/low-cost tiers may sleep, limit databases, or restrict extensions.
 - Need to confirm current pgvector support and plan limits before relying on it.
 
-Recommended for job-search portfolio and Upwork demo: Option A, using managed Postgres with pgvector and the simplest web hosting that supports backend release commands.
+Recommended for job-search portfolio and Upwork demo: Option A.
+
+Preferred first deployment path:
+
+- Managed PostgreSQL with pgvector: Neon or Supabase, after confirming current plan limits.
+- Backend: a Python web service or Docker-compatible service that supports a release command.
+- Frontend: static hosting pointed at the backend with `VITE_API_BASE_URL`, or the existing Nginx container if the platform supports multi-service Docker.
+
+This keeps maintenance lower than a VPS while still allowing a real public demo.
+
+## Production Environment Variables
+
+First public portfolio demo can use MockProvider:
+
+```text
+ENVIRONMENT=production
+LLM_PROVIDER=mock
+DATABASE_URL=<managed-postgres-connection-url>
+CORS_ORIGINS=<frontend-origin>
+EMBEDDING_DIMENSIONS=256
+RAG_SIMILARITY_THRESHOLD=0.18
+AUTO_CREATE_SCHEMA=false
+SECRET_KEY=<platform-secret>
+```
+
+Optional OpenAI mode:
+
+```text
+LLM_PROVIDER=openai
+OPENAI_API_KEY=<platform-secret>
+```
+
+Do not commit real values to Git. Put them only in hosting platform secrets/environment settings.
 
 ## Option B: Single VPS With Docker Compose
 

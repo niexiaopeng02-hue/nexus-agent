@@ -2,11 +2,11 @@
 
 ## GitHub Repository Description
 
-Production-oriented AI support assistant with FastAPI, React, PostgreSQL pgvector RAG, typed tool calling, citations, Docker, and CI.
+Full-stack AI support and knowledge agent with RAG, pgvector retrieval, tool calling, evaluation, FastAPI, React, PostgreSQL, Docker, and CI.
 
 ## GitHub Topics
 
-`ai`, `llm`, `rag`, `fastapi`, `pgvector`, `react`, `typescript`, `ai-agent`, `tool-calling`, `docker`
+`ai`, `llm`, `rag`, `fastapi`, `pgvector`, `react`, `typescript`, `ai-agent`, `tool-calling`, `postgresql`, `docker`, `openai`, `portfolio-project`
 
 ## GitHub About Description
 

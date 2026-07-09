@@ -43,3 +43,6 @@
 - [x] architecture diagram
 - [ ] GitHub pinned repo
 - [ ] Upwork portfolio entry
+- [x] resume project copy prepared
+- [x] Upwork portfolio copy prepared
+- [x] LinkedIn/project launch post prepared
