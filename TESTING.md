@@ -1,44 +1,49 @@
 # Testing
 
-## Backend
+## Backend Commands
 
 ```bash
 cd backend
-pip install -r requirements.txt
-pytest
 ruff check .
+pytest -m "not integration"
+pytest -m integration
 PYTHONPATH=. python evals/run_eval.py
 ```
 
-Coverage focuses on health checks, intent routing, order tool, inventory tool, product search, ticket creation, handoff creation, RAG citations, no-context refusal behavior, upload validation, chat API, documents API, tickets API, and analytics.
+Latest local results:
 
-Latest local result: `25 passed, 2 skipped`. The skipped tests require `PGVECTOR_TEST_DATABASE_URL`.
+- `ruff check .`: passed.
+- `pytest -m "not integration"`: `31 passed, 2 deselected`.
+- `pytest -m integration`: `3 skipped, 31 deselected` because `PGVECTOR_TEST_DATABASE_URL` was not configured locally.
+- `PYTHONPATH=. python evals/run_eval.py`: 16 cases with intent, tool selection, citation, expected document, and no-context metrics at `1.0`.
 
-## PostgreSQL + pgvector Integration
+## Integration Tests
+
+Set a real pgvector test database:
 
 ```bash
-cd backend
 set PGVECTOR_TEST_DATABASE_URL=postgresql+psycopg://nexus:nexus@localhost:5432/nexusagent_test
 pytest -m integration
 ```
 
-CI starts a `pgvector/pgvector:pg16` service and sets `PGVECTOR_TEST_DATABASE_URL`.
+The integration suite covers migration apply, pgvector search, document/chunk insert, citation retrieval, conversation persistence, ticket persistence, tool log persistence, request metrics, and document delete cascade.
 
-## Frontend
+## Frontend Commands
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run typecheck
 npm run build
 ```
 
+Latest local results: all passed.
+
 ## Docker
 
 ```bash
+docker compose config
 docker compose up --build
 ```
 
-Docker uses `pgvector/pgvector:pg16` for the database and runs the backend in mock-provider mode by default.
-
-Local Docker runtime verification was not completed because the Docker CLI is not installed or not available in this environment. The frontend image includes `nginx.conf` that proxies `/api/` to `http://backend:8000/api/` and serves SPA fallback with `try_files`.
+Both commands were attempted locally but could not run because `docker` is not installed or not available on PATH. Docker configuration was updated statically with a pgvector service healthcheck, backend dependency condition, and Nginx `/api/` proxy.

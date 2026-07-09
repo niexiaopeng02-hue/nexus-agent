@@ -2,24 +2,28 @@
 
 ## PostgreSQL + pgvector
 
-PostgreSQL keeps business records, conversations, tickets, and vector search in one operational database. pgvector is a practical choice for a portfolio-grade RAG system because it avoids a separate vector service while preserving production migration discipline.
+PostgreSQL stores documents, chunks, conversations, messages, tickets, handoffs, tool logs, orders, products, inventory, and request metrics. pgvector keeps retrieval in the same transactional database for this portfolio scope.
 
-## Explicit Router + Tool Calling
+## 256-Dimensional Embeddings
 
-NexusAgent does not let an unrestricted agent decide arbitrary actions. The router maps a validated intent to known workflows and tools. This is easier to test, audit, secure, and explain in enterprise support settings.
+The vector column uses `Vector(256)`. The OpenAI provider requests the configured dimensionality from the embeddings API; it does not slice or pad returned vectors. The mock provider emits deterministic vectors with the same configured dimension for tests.
 
-## Mock Provider by Default
+## Explicit Router + Tools
 
-The default provider is deterministic and requires no secret. This keeps CI, demos, and local development reliable. The OpenAI provider is available when `LLM_PROVIDER=openai` and `OPENAI_API_KEY` are configured.
+The system avoids arbitrary agent actions. A validated intent maps to a known workflow or tool. Tool inputs are Pydantic models, and failures are captured as safe `ToolExecutionError` variants.
 
-## Async Repository Layer
+## Mock Provider By Default
 
-Runtime APIs use FastAPI dependency injection to provide an `AsyncSession`. Repositories own persistence for documents, chunks, conversations, messages, tools, tickets, handoffs, orders, products, and inventory. This removes global mutable runtime state from the request path and makes database behavior testable.
+`LLM_PROVIDER=mock` keeps local demos and CI deterministic and secret-free. The OpenAI provider is available for production-style runs.
+
+## SQLite Test Isolation
+
+Unit/API tests use SQLite with the same repository layer for speed. PostgreSQL + pgvector behavior is covered by integration tests that run when `PGVECTOR_TEST_DATABASE_URL` is configured, including CI.
 
 ## Parser Abstraction
 
-Upload parsing is split into `DocumentParser` implementations. PDF parsing uses PyMuPDF to preserve page metadata, DOCX parsing uses python-docx paragraphs, and text formats use UTF-8 decoding.
+Upload parsing is separated from API routing. PDF, DOCX, and text formats have dedicated parsers so page/paragraph metadata can evolve without bloating `main.py`.
 
 ## Simplified Authentication
 
-Authentication is intentionally simplified for portfolio demonstration purposes. A production deployment should add real user identity, authorization policies, password hashing or SSO, and audit controls.
+Authentication is intentionally limited. A real deployment should add SSO or password hashing, role-based authorization, and audit controls.

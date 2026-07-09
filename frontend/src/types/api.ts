@@ -20,6 +20,8 @@ export type ToolExecution = {
   input: Record<string, unknown>;
   output?: Record<string, unknown> | null;
   error?: string | null;
+  error_code?: string | null;
+  error_message?: string | null;
 };
 
 export type ChatResponse = {
@@ -51,6 +53,8 @@ export type ConversationView = {
 
 export type TicketView = {
   id: string;
+  public_id?: string | null;
+  customer_email?: string | null;
   category: string;
   priority: string;
   status: string;
@@ -65,5 +69,6 @@ export type AnalyticsOverview = {
   tickets_created: number;
   unresolved_questions: number;
   average_response_time_ms: number;
+  average_retrieval_time_ms: number;
+  average_llm_time_ms: number;
 };
-

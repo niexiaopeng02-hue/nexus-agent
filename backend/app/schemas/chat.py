@@ -38,6 +38,8 @@ class ToolExecution(BaseModel):
     input: dict
     output: dict | None = None
     error: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
 
 
 class ChatRequest(BaseModel):

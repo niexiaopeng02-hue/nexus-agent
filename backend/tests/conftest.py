@@ -12,7 +12,10 @@ configure_database("sqlite+aiosqlite:///./test_nexusagent.db")
 
 
 @pytest.fixture(autouse=True)
-async def reset_store():
+async def reset_store(request):
+    if request.node.get_closest_marker("integration"):
+        yield
+        return
     await drop_schema(database.engine)
     await create_schema(database.engine)
 

@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     allowed_upload_extensions: str = ".pdf,.docx,.txt,.md,.markdown"
     log_level: str = "INFO"
     secret_key: str = Field(default="demo-only-change-me", min_length=8)
-    embedding_dimension: int = 64
+    embedding_dimensions: int = 256
+    rag_similarity_threshold: float = 0.18
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

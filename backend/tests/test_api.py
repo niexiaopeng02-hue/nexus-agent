@@ -50,9 +50,15 @@ def test_document_upload_markdown(client):
 
 
 def test_tickets_api(client):
-    created = client.post("/api/tickets", json={"summary": "Need warranty review", "category": "warranty", "priority": "normal"})
+    created = client.post(
+        "/api/tickets",
+        json={"summary": "Need warranty review", "category": "warranty", "priority": "normal", "customer_email": "customer@example.com"},
+    )
     assert created.status_code == 200
-    ticket_id = created.json()["id"]
+    body = created.json()
+    assert body["id"].startswith("TCK-")
+    assert body["customer_email"] == "customer@example.com"
+    ticket_id = body["id"]
     fetched = client.get(f"/api/tickets/{ticket_id}")
     assert fetched.status_code == 200
 
@@ -62,6 +68,7 @@ def test_analytics_api(client):
     response = client.get("/api/analytics/overview")
     assert response.status_code == 200
     assert response.json()["tool_calls"] >= 1
+    assert response.json()["average_response_time_ms"] >= 0
 
 
 def test_order_demo_api(client):

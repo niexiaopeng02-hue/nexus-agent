@@ -2,36 +2,35 @@
 
 ## Completed
 
-- Monorepo scaffold
-- FastAPI API
-- React frontend
-- Provider abstraction
-- Intent classifier and workflow router
-- Tool registry with order, product, inventory, ticket, and handoff tools
-- RAG ingestion, retrieval, and citation generation
-- Demo NovaTech knowledge base
-- Tests and deterministic evaluation suite
-- Docker Compose and GitHub Actions
-- README and architecture documentation
-- Senior engineer review
+- FastAPI backend and React/Vite frontend.
+- Async SQLAlchemy repository layer for runtime persistence.
+- PostgreSQL + pgvector model and migration path.
+- Documents, chunks, conversations, messages, tickets, handoffs, tool logs, orders, products, inventory, and request metrics persisted through repositories.
+- PDF/DOCX/TXT/Markdown parser abstraction.
+- Deterministic fast-path classifier plus structured LLM classifier fallback.
+- Typed business tool registry with failure logging.
+- Nginx frontend reverse proxy for `/api/`.
+- GitHub Actions CI with PostgreSQL pgvector service.
+- Deterministic evaluation pipeline and generated eval report.
 
-## Verified
+## Verified Locally
 
-- Backend dependencies installed in `backend/.venv`.
-- Backend tests passed: 22 passed.
-- Backend lint passed: `ruff check .`.
-- Evaluation passed with 15 cases and 1.0 for intent accuracy, tool selection accuracy, citation presence, and no-context refusal rate.
-- Frontend dependencies installed.
-- Frontend typecheck passed.
-- Frontend production build passed.
-- Backend app import/start object check passed.
-- Runtime path migrated from global `DemoStore` to async SQLAlchemy repositories.
-- PDF/DOCX/TXT/Markdown parser abstraction implemented.
-- Nginx production reverse proxy for `/api/` added.
+- Backend lint: `ruff check .` passed.
+- Backend non-integration tests: `31 passed, 2 deselected`.
+- Evaluation pipeline: 16 cases, all reported key metrics at `1.0`.
+- Frontend install: `npm ci` completed.
+- Frontend typecheck: passed.
+- Frontend production build: passed.
 
-## Not Completed
+## Skipped Or Not Locally Verified
 
-- Live hosted deployment.
-- Real authentication beyond documented demo posture.
-- Runtime Docker startup verification. Docker CLI is not installed or not available in this local environment.
-- Local pgvector integration execution. `PGVECTOR_TEST_DATABASE_URL` was not configured locally, so pgvector-specific tests were skipped here and are configured for CI.
+- Local pgvector integration tests: 3 skipped because `PGVECTOR_TEST_DATABASE_URL` was not configured.
+- Docker Compose config/up: not verified because Docker CLI is not installed in this environment.
+- Hosted deployment: not configured.
+
+## Remaining Production Work
+
+- Real authentication and authorization.
+- Managed PostgreSQL migration workflow for deployed environments.
+- Live deployment and smoke checks.
+- Broader migration rollback and transaction-boundary tests.

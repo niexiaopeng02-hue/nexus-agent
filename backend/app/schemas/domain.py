@@ -18,6 +18,8 @@ class TicketCreate(BaseModel):
 
 class TicketView(BaseModel):
     id: str
+    public_id: str | None = None
+    customer_email: str | None = None
     category: str
     priority: str
     status: str
@@ -32,3 +34,5 @@ class AnalyticsOverview(BaseModel):
     tickets_created: int
     unresolved_questions: int
     average_response_time_ms: int
+    average_retrieval_time_ms: int = 0
+    average_llm_time_ms: int = 0

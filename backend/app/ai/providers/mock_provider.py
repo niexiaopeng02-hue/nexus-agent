@@ -4,6 +4,7 @@ import math
 import re
 
 from app.ai.providers.base import LLMProvider
+from app.core.config import get_settings
 from app.schemas.chat import Citation
 
 
@@ -34,7 +35,8 @@ class MockProvider(LLMProvider):
 
     async def embed(self, text: str) -> list[float]:
         tokens = re.findall(r"[a-z0-9]+", text.lower())
-        vector = [0.0] * 64
+        dimensions = get_settings().embedding_dimensions
+        vector = [0.0] * dimensions
         for token in tokens:
             digest = hashlib.sha256(token.encode("utf-8")).digest()
             index = digest[0] % len(vector)

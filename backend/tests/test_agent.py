@@ -1,11 +1,14 @@
 import pytest
+from sqlalchemy import func, select
 
 from app.agent.classifier import classify_intent, classify_message
 from app.agent.router import route_message
 from app.ai.providers.mock_provider import MockProvider
+from app.db.seed import seed_demo_data
+from app.models import tables
 from app.repositories import BusinessRepository
 from app.schemas.chat import Intent
-from app.tools.registry import execute_tool
+from app.tools.registry import ToolHandlerError, ToolInputError, ToolNotFoundError, execute_tool
 
 
 def test_order_intent_extracts_id():
@@ -76,6 +79,59 @@ async def test_handoff_tool(db_session):
 
 
 @pytest.mark.asyncio
+async def test_mock_embedding_uses_configured_dimension():
+    embedding = await MockProvider().embed("return policy")
+    assert len(embedding) == 256
+
+
+@pytest.mark.asyncio
+async def test_seed_demo_data_is_idempotent(db_session):
+    before_documents = await db_session.scalar(select(func.count()).select_from(tables.Document))
+    before_orders = await db_session.scalar(select(func.count()).select_from(tables.Order))
+    await seed_demo_data(db_session, MockProvider())
+    after_documents = await db_session.scalar(select(func.count()).select_from(tables.Document))
+    after_orders = await db_session.scalar(select(func.count()).select_from(tables.Order))
+    assert after_documents == before_documents
+    assert after_orders == before_orders
+
+
+@pytest.mark.asyncio
+async def test_unknown_tool_is_logged_as_failure(db_session):
+    repo = BusinessRepository(db_session)
+    with pytest.raises(ToolNotFoundError):
+        await execute_tool(repo, "unknown_tool", {"value": "x"})
+    log = await db_session.scalar(select(tables.ToolExecutionLog).where(tables.ToolExecutionLog.tool_name == "unknown_tool"))
+    assert log is not None
+    assert log.status == "failed"
+    assert log.error_code == "TOOL_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_invalid_tool_input_is_logged_as_failure(db_session):
+    repo = BusinessRepository(db_session)
+    with pytest.raises(ToolInputError):
+        await execute_tool(repo, "get_order_status", {})
+    log = await db_session.scalar(select(tables.ToolExecutionLog).where(tables.ToolExecutionLog.error_code == "TOOL_INPUT_INVALID"))
+    assert log is not None
+
+
+@pytest.mark.asyncio
+async def test_tool_handler_exception_is_logged_as_failure(db_session, monkeypatch):
+    async def broken_get_order(*_args):
+        raise RuntimeError("database outage")
+
+    from app.tools import registry
+
+    original = registry.TOOLS["get_order_status"]
+    monkeypatch.setitem(registry.TOOLS, "get_order_status", original.model_copy(update={"handler": broken_get_order}))
+    repo = BusinessRepository(db_session)
+    with pytest.raises(ToolHandlerError):
+        await execute_tool(repo, "get_order_status", {"order_id": "ORD-10001"})
+    log = await db_session.scalar(select(tables.ToolExecutionLog).where(tables.ToolExecutionLog.error_code == "TOOL_HANDLER_FAILED"))
+    assert log is not None
+
+
+@pytest.mark.asyncio
 async def test_rag_knowledge_query_has_citation(db_session):
     response = await route_message("What is NovaTech's return policy?", None, MockProvider(), db_session)
     assert response.intent.intent == Intent.knowledge_query
@@ -88,3 +144,12 @@ async def test_no_context_behavior_for_unrelated_question(db_session):
     response = await route_message("Explain commercial drone insurance underwriting exclusions", None, MockProvider(), db_session)
     assert response.insufficient_context is True
     assert "do not have enough information" in response.answer.lower()
+
+
+@pytest.mark.asyncio
+async def test_route_message_persists_request_metrics(db_session):
+    response = await route_message("What is NovaTech's return policy?", None, MockProvider(), db_session)
+    metric = await db_session.scalar(select(tables.RequestMetric).where(tables.RequestMetric.conversation_id == response.conversation_id))
+    assert metric is not None
+    assert metric.intent == "knowledge_query"
+    assert metric.citation_count == len(response.citations)

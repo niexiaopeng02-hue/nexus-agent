@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -37,7 +37,7 @@ class DocumentChunk(Base, TimestampMixin):
     chunk_index: Mapped[int] = mapped_column(Integer)
     page_number: Mapped[Optional[int]] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(Text)
-    embedding: Mapped[list[float]] = mapped_column(Vector(64))
+    embedding: Mapped[list[float]] = mapped_column(Vector(256))
 
 
 class Conversation(Base, TimestampMixin):
@@ -81,7 +81,9 @@ class Inventory(Base, TimestampMixin):
 
 class SupportTicket(Base, TimestampMixin):
     __tablename__ = "support_tickets"
-    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    public_id: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    customer_email: Mapped[Optional[str]] = mapped_column(String(255))
     category: Mapped[str] = mapped_column(String(80))
     priority: Mapped[str] = mapped_column(String(40))
     status: Mapped[str] = mapped_column(String(40), index=True)
@@ -90,7 +92,9 @@ class SupportTicket(Base, TimestampMixin):
 
 class HandoffRequest(Base, TimestampMixin):
     __tablename__ = "handoff_requests"
-    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    public_id: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    conversation_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("conversations.id", ondelete="SET NULL"), index=True)
     reason: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(40), index=True)
 
@@ -102,3 +106,20 @@ class ToolExecutionLog(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(40), index=True)
     input: Mapped[dict] = mapped_column(JSON)
     output: Mapped[Optional[dict]] = mapped_column(JSON)
+    error_code: Mapped[Optional[str]] = mapped_column(String(80), index=True)
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+
+
+class RequestMetric(Base, TimestampMixin):
+    __tablename__ = "request_metrics"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    conversation_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("conversations.id", ondelete="SET NULL"), index=True)
+    intent: Mapped[str] = mapped_column(String(80), index=True)
+    total_ms: Mapped[int] = mapped_column(Integer)
+    classification_ms: Mapped[int] = mapped_column(Integer, default=0)
+    retrieval_ms: Mapped[int] = mapped_column(Integer, default=0)
+    llm_ms: Mapped[int] = mapped_column(Integer, default=0)
+    tool_ms: Mapped[int] = mapped_column(Integer, default=0)
+    citation_count: Mapped[int] = mapped_column(Integer, default=0)
+    tool_count: Mapped[int] = mapped_column(Integer, default=0)
+    success: Mapped[float] = mapped_column(Float, default=1.0)

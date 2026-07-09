@@ -1,6 +1,6 @@
 from collections.abc import Awaitable, Callable
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.repositories import BusinessRepository
 
@@ -36,6 +36,26 @@ class ToolDefinition(BaseModel):
     handler: Callable[[BusinessRepository, BaseModel], Awaitable[dict]]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class ToolExecutionError(Exception):
+    code = "TOOL_EXECUTION_FAILED"
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
+
+
+class ToolNotFoundError(ToolExecutionError):
+    code = "TOOL_NOT_FOUND"
+
+
+class ToolInputError(ToolExecutionError):
+    code = "TOOL_INPUT_INVALID"
+
+
+class ToolHandlerError(ToolExecutionError):
+    code = "TOOL_HANDLER_FAILED"
 
 
 async def get_order_status(repo: BusinessRepository, payload: BaseModel) -> dict:
@@ -94,12 +114,24 @@ TOOLS: dict[str, ToolDefinition] = {
 
 
 async def execute_tool(repo: BusinessRepository, name: str, raw_input: dict) -> dict:
-    tool = TOOLS[name]
-    payload = tool.input_model(**raw_input)
+    tool = TOOLS.get(name)
+    if tool is None:
+        error = ToolNotFoundError(f"Tool '{name}' is not registered.")
+        await repo.log_tool(name, "failed", raw_input, error_code=error.code, error_message=error.message)
+        raise error
+    try:
+        payload = tool.input_model(**raw_input)
+    except ValidationError as exc:
+        error = ToolInputError("Tool input did not match its schema.")
+        await repo.log_tool(name, "failed", raw_input, error_code=error.code, error_message=str(exc))
+        raise error from exc
     try:
         output = await tool.handler(repo, payload)
         await repo.log_tool(name, "success", raw_input, output)
         return output
-    except Exception as exc:
-        await repo.log_tool(name, "error", raw_input, {"error": str(exc)})
+    except ToolExecutionError:
         raise
+    except Exception as exc:
+        error = ToolHandlerError("Tool handler failed.")
+        await repo.log_tool(name, "failed", raw_input, error_code=error.code, error_message=str(exc))
+        raise error from exc

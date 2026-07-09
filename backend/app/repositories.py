@@ -79,7 +79,7 @@ class DocumentRepository:
         await self.session.commit()
         return document, count
 
-    async def vector_search(self, embedding: list[float], k: int = 4, threshold: float = 0.12) -> list[RetrievedChunk]:
+    async def vector_search(self, embedding: list[float], k: int = 4, threshold: float = 0.18) -> list[RetrievedChunk]:
         if self.session.bind and self.session.bind.dialect.name == "postgresql":
             distance = tables.DocumentChunk.embedding.cosine_distance(embedding)
             stmt = (
@@ -233,31 +233,46 @@ class BusinessRepository:
     async def create_ticket(
         self, summary: str, category: str = "technical_support", priority: str = "normal", customer_email: str | None = None
     ) -> dict:
-        count = await self.session.scalar(select(func.count()).select_from(tables.SupportTicket))
-        ticket_id = f"TCK-{10001 + int(count or 0)}"
-        ticket = tables.SupportTicket(id=ticket_id, category=category, priority=priority, status="open", summary=summary)
+        public_id = f"TCK-{uuid4().hex[:8].upper()}"
+        ticket = tables.SupportTicket(
+            id=str(uuid4()),
+            public_id=public_id,
+            category=category,
+            priority=priority,
+            status="open",
+            summary=summary,
+            customer_email=customer_email,
+        )
         self.session.add(ticket)
         await self.session.commit()
         return {
-            "id": ticket.id,
+            "id": ticket.public_id,
+            "public_id": ticket.public_id,
             "category": ticket.category,
             "priority": ticket.priority,
             "status": ticket.status,
             "summary": ticket.summary,
-            "customer_email": customer_email,
+            "customer_email": ticket.customer_email,
             "created_at": ticket.created_at.isoformat(),
         }
 
     async def get_ticket(self, ticket_id: str) -> dict | None:
-        ticket = await self.session.get(tables.SupportTicket, ticket_id)
+        result = await self.session.execute(
+            select(tables.SupportTicket).where(
+                (tables.SupportTicket.id == ticket_id) | (tables.SupportTicket.public_id == ticket_id)
+            )
+        )
+        ticket = result.scalar_one_or_none()
         if not ticket:
             return None
         return {
-            "id": ticket.id,
+            "id": ticket.public_id,
+            "public_id": ticket.public_id,
             "category": ticket.category,
             "priority": ticket.priority,
             "status": ticket.status,
             "summary": ticket.summary,
+            "customer_email": ticket.customer_email,
             "created_at": ticket.created_at.isoformat(),
         }
 
@@ -265,27 +280,86 @@ class BusinessRepository:
         result = await self.session.execute(select(tables.SupportTicket).order_by(tables.SupportTicket.created_at.desc()))
         return [
             {
-                "id": ticket.id,
+                "id": ticket.public_id,
+                "public_id": ticket.public_id,
                 "category": ticket.category,
                 "priority": ticket.priority,
                 "status": ticket.status,
                 "summary": ticket.summary,
+                "customer_email": ticket.customer_email,
                 "created_at": ticket.created_at.isoformat(),
             }
             for ticket in result.scalars().all()
         ]
 
     async def create_handoff(self, reason: str, conversation_id: str | None = None) -> dict:
-        count = await self.session.scalar(select(func.count()).select_from(tables.HandoffRequest))
-        handoff_id = f"HND-{10001 + int(count or 0)}"
-        handoff = tables.HandoffRequest(id=handoff_id, reason=reason, status="queued")
+        public_id = f"HND-{uuid4().hex[:8].upper()}"
+        handoff = tables.HandoffRequest(
+            id=str(uuid4()),
+            public_id=public_id,
+            reason=reason,
+            conversation_id=conversation_id,
+            status="queued",
+        )
         self.session.add(handoff)
         await self.session.commit()
-        return {"id": handoff.id, "reason": handoff.reason, "conversation_id": conversation_id, "status": handoff.status}
+        return {
+            "id": handoff.public_id,
+            "public_id": handoff.public_id,
+            "reason": handoff.reason,
+            "conversation_id": conversation_id,
+            "status": handoff.status,
+        }
 
-    async def log_tool(self, tool_name: str, status: str, input_data: dict, output: dict | None = None) -> None:
+    async def log_tool(
+        self,
+        tool_name: str,
+        status: str,
+        input_data: dict,
+        output: dict | None = None,
+        error_code: str | None = None,
+        error_message: str | None = None,
+    ) -> None:
         self.session.add(
-            tables.ToolExecutionLog(id=str(uuid4()), tool_name=tool_name, status=status, input=input_data, output=output)
+            tables.ToolExecutionLog(
+                id=str(uuid4()),
+                tool_name=tool_name,
+                status=status,
+                input=input_data,
+                output=output,
+                error_code=error_code,
+                error_message=error_message,
+            )
+        )
+        await self.session.commit()
+
+    async def log_request_metric(
+        self,
+        conversation_id: str,
+        intent: str,
+        total_ms: int,
+        classification_ms: int = 0,
+        retrieval_ms: int = 0,
+        llm_ms: int = 0,
+        tool_ms: int = 0,
+        citation_count: int = 0,
+        tool_count: int = 0,
+        success: bool = True,
+    ) -> None:
+        self.session.add(
+            tables.RequestMetric(
+                id=str(uuid4()),
+                conversation_id=conversation_id,
+                intent=intent,
+                total_ms=total_ms,
+                classification_ms=classification_ms,
+                retrieval_ms=retrieval_ms,
+                llm_ms=llm_ms,
+                tool_ms=tool_ms,
+                citation_count=citation_count,
+                tool_count=tool_count,
+                success=1.0 if success else 0.0,
+            )
         )
         await self.session.commit()
 
@@ -304,7 +378,13 @@ class BusinessRepository:
             "tool_calls": tool_calls,
             "tickets_created": tickets,
             "unresolved_questions": unresolved,
-            "average_response_time_ms": 0,
+            "average_response_time_ms": int(
+                await self.session.scalar(select(func.coalesce(func.avg(tables.RequestMetric.total_ms), 0))) or 0
+            ),
+            "average_retrieval_time_ms": int(
+                await self.session.scalar(select(func.coalesce(func.avg(tables.RequestMetric.retrieval_ms), 0))) or 0
+            ),
+            "average_llm_time_ms": int(await self.session.scalar(select(func.coalesce(func.avg(tables.RequestMetric.llm_ms), 0))) or 0),
         }
 
 

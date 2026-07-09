@@ -1,45 +1,69 @@
 # Architecture
 
-NexusAgent uses explicit workflow routing rather than a fully open-ended agent. A request is classified into an intent, validated entities are extracted, and the router selects either RAG or a typed business tool.
+NexusAgent uses explicit workflow routing instead of an unconstrained autonomous agent. Requests are classified, validated, routed, and persisted through repository boundaries.
 
 ```mermaid
-flowchart LR
-  User[User] --> Frontend[React Frontend]
-  Frontend --> API[FastAPI API]
-  API --> Router[Intent Router]
-  Router --> RAG[RAG Pipeline]
-  Router --> Tools[Tool Registry]
-  RAG --> Vector[PostgreSQL + pgvector]
-  RAG --> LLM[LLM Provider]
-  Tools --> Data[Business Data]
-  LLM --> API
-  Data --> API
-  API --> Frontend
+sequenceDiagram
+  participant U as User
+  participant F as React Frontend
+  participant A as FastAPI
+  participant C as Classifier
+  participant R as Repository Layer
+  participant P as PostgreSQL + pgvector
+  participant L as LLM Provider
+
+  U->>F: chat message
+  F->>A: POST /api/chat
+  A->>R: persist user message
+  A->>C: deterministic fast path or structured LLM classification
+  alt tool intent
+    A->>R: validate and execute typed business tool
+    R->>P: orders/products/inventory/tickets/handoff/logs
+  else knowledge intent
+    A->>L: embed query
+    A->>R: vector_search
+    R->>P: pgvector cosine-distance top-k query
+    A->>L: answer with retrieved context
+  end
+  A->>R: persist assistant message and request metrics
+  A->>F: answer, citations, tool executions
 ```
 
-## RAG Flow
+## Repository Layer
 
-Documents are parsed by file type, cleaned, split with paragraph-aware chunking, embedded, and stored in PostgreSQL as chunks with pgvector embeddings and document metadata. Retrieval embeds the user query and, on PostgreSQL, executes a pgvector cosine-distance query ordered by nearest chunks. Citations are derived only from returned database rows. The default mock provider uses deterministic 64-dimensional hash embeddings so demos and tests work without secrets.
+The request path uses Async SQLAlchemy repositories:
 
-## Agent Routing
+- `DocumentRepository`: documents, chunks, delete cascade, pgvector retrieval.
+- `ConversationRepository`: conversations and messages.
+- `BusinessRepository`: orders, products, inventory, tickets, handoffs, tool logs, request metrics.
 
-Supported intents include `knowledge_query`, `order_query`, `product_query`, `inventory_query`, `refund_request`, `technical_support`, `create_ticket`, `human_handoff`, `general_conversation`, and `unknown`.
+FastAPI injects an `AsyncSession` with `get_session`. APIs should not access global mutable demo stores.
 
-Routing is explicit:
+## Retrieval
 
-- `knowledge_query` -> RAG pipeline
-- `order_query` -> `get_order_status`
-- `inventory_query` -> `check_inventory`
-- `product_query` -> `search_products`
-- `create_ticket` -> `create_support_ticket`
-- `human_handoff` -> `create_handoff_request`
+`document_chunks.embedding` is a pgvector `Vector(256)`. PostgreSQL retrieval uses cosine distance and returns rows ordered by nearest chunk. The SQLite fallback exists only for local unit-test isolation.
 
-## Data Storage
+No-context behavior is threshold-driven by `RAG_SIMILARITY_THRESHOLD`; citations are created only from retrieved chunks.
 
-Runtime data access goes through async SQLAlchemy repositories. The production path targets PostgreSQL with pgvector. Unit tests use SQLite as an isolation strategy, while pgvector integration tests run when `PGVECTOR_TEST_DATABASE_URL` is available.
+## Parsing
 
-## Parser Flow
-
-- PDF: PyMuPDF reads text per page and preserves `page_number`.
+- PDF: PyMuPDF reads per page and preserves `page_number`.
 - DOCX: python-docx reads paragraphs.
-- TXT/Markdown: UTF-8 text parsing.
+- TXT/Markdown: UTF-8 text parser.
+
+Parser implementations live behind the `DocumentParser` abstraction in `backend/app/rag/parsers.py`.
+
+## Intent Classification
+
+Routing uses:
+
+1. deterministic fast path for high-confidence business/support intents;
+2. LLM structured JSON classifier for lower-confidence messages;
+3. Pydantic validation;
+4. malformed/low-confidence fallback to `unknown`.
+
+Unvalidated JSON never enters the business routing layer.
+
+## Docker Routing
+
+The production frontend image uses Nginx. `/api/` is proxied to `http://backend:8000/api/`, and SPA routes fall back to `/index.html`.

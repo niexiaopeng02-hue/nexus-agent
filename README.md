@@ -1,61 +1,56 @@
 # NexusAgent
 
-Production-oriented AI customer support and knowledge agent platform for the fictional NovaTech electronics support desk.
+NexusAgent is a production-oriented AI customer support and knowledge agent for the fictional NovaTech electronics support desk. It is built as a portfolio project to show the engineering behind an LLM application: database-backed RAG, typed tool execution, citations, parser boundaries, deterministic tests, and Docker/CI wiring.
 
-## Screenshot
+## Why This Project Exists
 
-Add screenshots after running the frontend locally. The application includes a landing page, chat workspace, knowledge base manager, conversation viewer, ticket list, and analytics dashboard.
+The goal is not to add many chat modes or decorative UI screens. The goal is to demonstrate a realistic AI application runtime where the backend owns durable state, retrieval is auditable, tool calls are validated, and local/CI runs can work without API secrets.
 
-## Live Demo
+## Portfolio Highlights
 
-No hosted demo is configured yet. The project is designed to run locally with mock AI by default and can be deployed with Docker.
-
-## Features
-
-- AI support chat with intent badges, tool execution indicators, and citations.
-- Knowledge base ingestion with chunking, embeddings, vector-style retrieval, and source snippets.
-- Business tool calling for orders, products, inventory, support tickets, and human handoff.
-- Conversation memory and admin views for documents, tickets, conversations, and analytics.
-- Deterministic mock LLM provider for demos, tests, and CI without secrets.
-- OpenAI provider abstraction for production model and embedding calls.
-- Async SQLAlchemy repository layer backed by PostgreSQL + pgvector, with Alembic migration.
-- Docker Compose setup and GitHub Actions CI.
+- FastAPI backend with Async SQLAlchemy repository layer.
+- PostgreSQL + pgvector retrieval path for `document_chunks.embedding`.
+- Pydantic-validated intent classification and tool input schemas.
+- Deterministic mock LLM provider for CI and demos.
+- OpenAI provider that requests configured embedding dimensions instead of slicing vectors.
+- PDF parsing with PyMuPDF, DOCX parsing with python-docx, and text parsing for TXT/Markdown.
+- React/Vite frontend with chat, documents, conversations, tickets, and analytics.
+- Docker Compose with PostgreSQL pgvector, backend, and Nginx-served frontend.
+- GitHub Actions backend/frontend CI, including pgvector integration tests.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
   User[User] --> Frontend[React Frontend]
-  Frontend --> FastAPI[FastAPI API]
-  FastAPI --> Router[Intent Router]
+  Frontend --> API[FastAPI API]
+  API --> Router[Intent Router]
   Router --> RAG[RAG Pipeline]
   Router --> Tools[Tool Registry]
   RAG --> VectorDB[PostgreSQL + pgvector]
   RAG --> LLM[LLM Provider]
-  Tools --> BusinessData[Orders / Products / Inventory / Tickets]
-  LLM --> Response[Answer with Citations]
-  BusinessData --> Response
-  Response --> Frontend
+  Tools --> BusinessDB[Orders / Products / Inventory / Tickets]
+  LLM --> API
+  BusinessDB --> API
+  API --> Frontend
 ```
 
-NexusAgent is not a simple chatbot wrapper. It separates intent classification, workflow routing, retrieval, tool execution, and response generation so each layer can be tested and audited.
+## Key Engineering Challenges
 
-## How It Works
+- Keeping citations tied only to retrieved database chunks.
+- Avoiding global mutable demo state in production request paths.
+- Supporting local test isolation while keeping PostgreSQL + pgvector as the production target.
+- Separating deterministic fast-path intent routing from LLM structured output validation.
+- Keeping upload parsing out of `main.py` and preserving PDF page metadata.
+- Making tool failures safe, logged, and testable.
 
-1. The user sends a chat message.
-2. The backend classifies intent into a structured Pydantic model.
-3. The router chooses a RAG workflow or a typed business tool.
-4. Tool inputs are validated and logged.
-5. Knowledge answers include citations generated from retrieved chunks only.
-6. Conversations and analytics are stored in the demo runtime.
+## Production Vs Demo Mode
+
+`LLM_PROVIDER=mock` is the default. It uses deterministic embeddings and responses so tests and demos run without secrets. `LLM_PROVIDER=openai` enables the OpenAI provider when `OPENAI_API_KEY` is set. PostgreSQL is the intended runtime database; SQLite is used only for fast local unit-test isolation.
 
 ## RAG Pipeline
 
-Documents are parsed by file type, cleaned, split with paragraph-aware chunking, embedded, and stored in `document_chunks.embedding` as a pgvector column. PostgreSQL retrieval orders by cosine distance and returns top-k chunks above the configured threshold. Chunk metadata includes document id, document name, chunk index, page number when available, and content snippet. The default mock provider uses deterministic 64-dimensional embeddings so the project works without `OPENAI_API_KEY`.
-
-## Agent Routing
-
-Supported intents include `knowledge_query`, `order_query`, `product_query`, `inventory_query`, `refund_request`, `technical_support`, `create_ticket`, `human_handoff`, `general_conversation`, and `unknown`.
+Documents are parsed by file type, split into paragraph-aware chunks, embedded into 256-dimensional vectors, and stored in `document_chunks.embedding`. PostgreSQL deployments use pgvector cosine distance to return top-k chunks above `RAG_SIMILARITY_THRESHOLD`. Citations are built from the returned database rows.
 
 ## Tool Calling
 
@@ -67,41 +62,12 @@ Implemented tools:
 - `create_support_ticket`
 - `create_handoff_request`
 
-Each tool has a name, description, input schema, output payload, and handler backed by NovaTech demo records.
-
-## Evaluation
-
-The backend includes `backend/evals` with 15 deterministic cases. Metrics include intent accuracy, retrieval/citation checks, no-context refusal rate, tool selection accuracy, and latency. No fake LLM-judge scores are reported.
-
-## Tech Stack
-
-- Backend: Python, FastAPI, Pydantic, Async SQLAlchemy 2.x, Alembic
-- AI: provider abstraction, OpenAI-ready provider, deterministic mock provider
-- RAG: PostgreSQL + pgvector, DB-backed cosine vector search, PDF/DOCX/TXT/Markdown parsing
-- Frontend: React, TypeScript, Vite, React Router, TanStack Query, Lucide React
-- Quality: pytest, pytest-asyncio, httpx, Ruff, mypy-ready config
-- Delivery: Docker, Docker Compose, GitHub Actions
-
-## Project Structure
-
-```text
-nexus-agent/
-  backend/
-    app/
-    alembic/
-    evals/
-    tests/
-  frontend/
-    src/
-  sample_data/
-  scripts/
-  .github/workflows/
-```
+Each tool has a Pydantic input schema, a typed handler, and a `tool_execution_logs` record for success or failure.
 
 ## Quick Start
 
 ```bash
-cd nexus-agent/backend
+cd backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -111,8 +77,8 @@ uvicorn app.main:app --reload
 In a second terminal:
 
 ```bash
-cd nexus-agent/frontend
-npm install
+cd frontend
+npm ci
 npm run dev
 ```
 
@@ -120,81 +86,60 @@ Open `http://localhost:5173`.
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` for local customization.
+Copy `.env.example` to `.env`.
 
 - `LLM_PROVIDER=mock` runs without secrets.
-- `LLM_PROVIDER=openai` enables the OpenAI provider when `OPENAI_API_KEY` is set.
-- `DATABASE_URL` points to PostgreSQL for production-style storage.
-- `CORS_ORIGINS` controls browser access.
+- `LLM_PROVIDER=openai` uses OpenAI when `OPENAI_API_KEY` is configured.
+- `DATABASE_URL` points to PostgreSQL.
+- `EMBEDDING_DIMENSIONS=256` must match the vector column dimension.
+- `RAG_SIMILARITY_THRESHOLD=0.18` controls no-context behavior.
 
-Authentication is simplified for portfolio demonstration purposes.
-
-## Docker Setup
+## Docker
 
 ```bash
 docker compose up --build
 ```
 
-Compose starts frontend, backend, and PostgreSQL using `pgvector/pgvector:pg16`.
+Compose defines PostgreSQL with `pgvector/pgvector:pg16`, the FastAPI backend, and an Nginx frontend image. `frontend/nginx.conf` proxies `/api/` to `http://backend:8000/api/` and uses SPA fallback with `try_files`.
 
-## Local Development
-
-Backend:
+## Evaluation
 
 ```bash
 cd backend
-pytest
-ruff check .
 PYTHONPATH=. python evals/run_eval.py
 ```
 
-Frontend:
+The current deterministic suite has 16 cases covering intent accuracy, tool selection, citation presence, expected cited document, no-context refusal, and latency. The script writes `backend/evals/eval_results.json` and `backend/evals/EVAL_REPORT.md`.
+
+## Local Checks
+
+```bash
+cd backend
+ruff check .
+pytest -m "not integration"
+pytest -m integration
+PYTHONPATH=. python evals/run_eval.py
+```
 
 ```bash
 cd frontend
+npm ci
 npm run typecheck
 npm run build
 ```
 
-## Demo Questions
+`pytest -m integration` requires `PGVECTOR_TEST_DATABASE_URL`. Without it, those tests are skipped locally and run in CI.
 
-```text
-What is NovaTech's return policy?
-Where is order ORD-10001?
-Is the Wireless Headphones product in stock?
-My keyboard stopped working. Please create a support ticket.
-Do you offer drone insurance?
-```
+## Screenshots
 
-The final question demonstrates no-context refusal instead of hallucinated policy details.
+Screenshot capture is tracked under `docs/screenshots/README.md`. No generated screenshots are committed yet.
 
-## API Documentation
+## Known Limits
 
-Start the backend and open:
-
-- OpenAPI: `http://127.0.0.1:8000/docs`
-- Health: `GET /api/health`
-- Chat: `POST /api/chat`
-- Documents: `GET /api/documents`
-- Tickets: `GET /api/tickets`
-- Analytics: `GET /api/analytics/overview`
-
-## Design Decisions
-
-Key decisions are documented in `DECISIONS.md`: PostgreSQL + pgvector, explicit workflow routing, mock provider by default, and simplified authentication for demo scope.
-
-## Known Limitations
-
-- Local unit tests use SQLite for fast isolation; pgvector integration tests require `PGVECTOR_TEST_DATABASE_URL`.
-- OpenAI embeddings are normalized to the configured 64-dimensional storage shape in this demo. A production system should choose and migrate a single embedding dimensionality intentionally.
-- Real authentication and role-based authorization are intentionally not fully implemented.
-- Docker runtime verification depends on local Docker availability.
-
-## Future Improvements
-
-- Broader database integration tests for migrations and rollback behavior.
-- Production authentication and authorization.
-- Hosted deployment with managed Postgres and CI-based migrations.
+- Authentication is intentionally simplified for portfolio scope.
+- Local pgvector integration requires a running PostgreSQL/pgvector database.
+- Docker runtime verification requires Docker to be installed locally.
+- Mock embeddings are deterministic and useful for tests, but OpenAI embeddings should be used for realistic retrieval quality.
 
 ## License
 

@@ -17,6 +17,10 @@ def summarize(results: list[dict]) -> dict:
             sum(item["citation_ok"] for item in results if item["must_have_citation"]),
             sum(1 for item in results if item["must_have_citation"]),
         ),
+        "expected_document_accuracy": ratio(
+            sum(item["document_ok"] for item in results if item["expected_document"]),
+            sum(1 for item in results if item["expected_document"]),
+        ),
         "no_context_refusal_rate": ratio(
             sum(item["refusal_ok"] for item in results if item["must_refuse"]), sum(1 for item in results if item["must_refuse"])
         ),

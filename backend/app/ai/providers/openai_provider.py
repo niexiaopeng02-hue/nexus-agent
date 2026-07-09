@@ -1,4 +1,5 @@
 from app.ai.providers.base import LLMProvider
+from app.core.config import get_settings
 from app.schemas.chat import Citation
 
 
@@ -24,9 +25,12 @@ class OpenAIProvider(LLMProvider):
         from openai import AsyncOpenAI
 
         client = AsyncOpenAI(api_key=self.api_key)
-        response = await client.embeddings.create(model="text-embedding-3-small", input=text)
-        embedding = response.data[0].embedding
-        return (embedding[:64] + [0.0] * 64)[:64]
+        response = await client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text,
+            dimensions=get_settings().embedding_dimensions,
+        )
+        return response.data[0].embedding
 
     async def classify_intent(self, message: str) -> str:
         from openai import AsyncOpenAI
