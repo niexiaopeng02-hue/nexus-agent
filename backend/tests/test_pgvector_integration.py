@@ -100,13 +100,16 @@ async def test_pgvector_document_chunk_search_and_citation(pg_session):
     assert extension == "vector"
     repo = DocumentRepository(pg_session)
     provider = MockProvider()
-    doc = await ingest_text_document("integration_return.md", "Returns are accepted within 30 days of delivery.", provider, repo)
-    query_embedding = await provider.embed("return policy")
+    unique_phrase = "integrationvectoralpha refund diagnostic marker"
+    doc = await ingest_text_document("integration_return.md", f"{unique_phrase} Returns are accepted within 30 days.", provider, repo)
+    query_embedding = await provider.embed(unique_phrase)
     assert len(query_embedding) == 256
-    chunks = await repo.vector_search(query_embedding, k=3, threshold=0.01)
+    chunks = await repo.vector_search(query_embedding, k=5, threshold=0.01)
     assert chunks
     assert any(chunk.document_id == doc.id for chunk in chunks)
-    assert all(chunk.document_name for chunk in chunks)
+    matched = next(chunk for chunk in chunks if chunk.document_id == doc.id)
+    assert matched.document_name == "integration_return.md"
+    assert unique_phrase in matched.content
     filtered = await repo.vector_search(query_embedding, k=3, threshold=1.01)
     assert filtered == []
 
