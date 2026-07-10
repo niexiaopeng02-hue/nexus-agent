@@ -1,0 +1,9 @@
+.git
+.venv
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/node_modules
+**/dist
+backend/evals/eval_results.json
+backend/evals/EVAL_REPORT.md
