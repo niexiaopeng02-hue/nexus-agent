@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     def allowed_extensions_set(self) -> set[str]:
         return {ext.strip().lower() for ext in self.allowed_upload_extensions.split(",")}
 
+    @property
+    def async_database_url(self) -> str:
+        if self.database_url.startswith("postgresql://"):
+            return self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return self.database_url
+
 
 @lru_cache
 def get_settings() -> Settings:

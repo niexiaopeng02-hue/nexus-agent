@@ -9,7 +9,7 @@ def _make_engine(url: str):
     return create_async_engine(url, pool_pre_ping=True)
 
 
-engine = _make_engine(get_settings().database_url)
+engine = _make_engine(get_settings().async_database_url)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
@@ -22,4 +22,3 @@ def configure_database(url: str) -> None:
     global engine, AsyncSessionLocal
     engine = _make_engine(url)
     AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
-
