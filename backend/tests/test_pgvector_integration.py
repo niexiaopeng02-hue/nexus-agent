@@ -13,7 +13,6 @@ from app.db.init_db import create_schema, drop_schema
 from app.db.seed import seed_demo_data
 from app.db.session import configure_database
 from app.models import tables
-from app.rag.ingestion import ingest_text_document
 from app.repositories import BusinessRepository, DocumentRepository
 
 pytestmark = pytest.mark.integration
@@ -99,18 +98,21 @@ async def test_pgvector_document_chunk_search_and_citation(pg_session):
     extension = await pg_session.scalar(text("SELECT extname FROM pg_extension WHERE extname = 'vector'"))
     assert extension == "vector"
     repo = DocumentRepository(pg_session)
-    provider = MockProvider()
     unique_phrase = "integrationvectoralpha refund diagnostic marker"
-    doc = await ingest_text_document("integration_return.md", f"{unique_phrase} Returns are accepted within 30 days.", provider, repo)
-    query_embedding = await provider.embed(unique_phrase)
-    assert len(query_embedding) == 256
-    chunks = await repo.vector_search(query_embedding, k=5, threshold=0.01)
+    probe_embedding = [0.0] * 256
+    probe_embedding[17] = 1.0
+    doc = await repo.create_document(
+        "integration_return.md",
+        [(f"{unique_phrase} Returns are accepted within 30 days.", probe_embedding, 7)],
+    )
+    chunks = await repo.vector_search(probe_embedding, k=1, threshold=0.99)
     assert chunks
-    assert any(chunk.document_id == doc.id for chunk in chunks)
-    matched = next(chunk for chunk in chunks if chunk.document_id == doc.id)
+    matched = chunks[0]
+    assert matched.document_id == doc.id
     assert matched.document_name == "integration_return.md"
+    assert matched.page_number == 7
     assert unique_phrase in matched.content
-    filtered = await repo.vector_search(query_embedding, k=3, threshold=1.01)
+    filtered = await repo.vector_search(probe_embedding, k=3, threshold=1.01)
     assert filtered == []
 
 
