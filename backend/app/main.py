@@ -1,8 +1,11 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.router import route_message
@@ -39,6 +42,16 @@ async def get_session_context():
 
 app = FastAPI(title="NexusAgent API", version="0.1.0", lifespan=lifespan)
 app.add_exception_handler(AppError, app_error_handler)
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+STATIC_ROOT = PROJECT_ROOT / "public"
+if not (STATIC_ROOT / "index.html").exists():
+    STATIC_ROOT = PROJECT_ROOT / "frontend" / "dist"
+STATIC_INDEX = STATIC_ROOT / "index.html"
+STATIC_ASSETS = STATIC_ROOT / "assets"
+
+if STATIC_ASSETS.exists():
+    app.mount("/assets", StaticFiles(directory=STATIC_ASSETS), name="assets")
 
 settings = get_settings()
 UPLOAD_FILE = File(...)
@@ -213,3 +226,19 @@ async def get_inventory(product_id: str, session: AsyncSession = SESSION_DEP) ->
     if not inventory:
         raise HTTPException(status_code=404, detail="Inventory not found")
     return inventory
+
+
+@app.get("/", include_in_schema=False)
+async def frontend_root():
+    if STATIC_INDEX.exists():
+        return FileResponse(STATIC_INDEX)
+    raise HTTPException(status_code=404, detail="Frontend build not found")
+
+
+@app.get("/{path:path}", include_in_schema=False)
+async def frontend_fallback(path: str):
+    if path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    if STATIC_INDEX.exists():
+        return FileResponse(STATIC_INDEX)
+    raise HTTPException(status_code=404, detail="Frontend build not found")

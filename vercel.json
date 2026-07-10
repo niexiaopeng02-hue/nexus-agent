@@ -3,12 +3,8 @@
   "outputDirectory": "public",
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/:path*",
       "destination": "/api/index.py"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ],
   "functions": {
