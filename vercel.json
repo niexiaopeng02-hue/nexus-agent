@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd frontend && npm ci && npm run build",
-  "outputDirectory": "frontend/dist",
+  "buildCommand": "cd frontend && npm ci && npm run build && cd .. && node scripts/prepare-vercel-static.mjs",
+  "outputDirectory": "public",
   "rewrites": [
     {
       "source": "/api/(.*)",
