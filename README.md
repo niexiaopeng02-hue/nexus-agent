@@ -1,5 +1,7 @@
 # NexusAgent
 
+[![CI](https://github.com/niexiaopeng02-hue/nexus-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/niexiaopeng02-hue/nexus-agent/actions/workflows/ci.yml)
+
 Production-oriented AI support and knowledge agent with RAG, pgvector retrieval, tool execution, structured intent routing, evaluation, and full-stack deployment readiness.
 
 NexusAgent is a portfolio project for the fictional NovaTech electronics support desk. It shows the engineering behind an LLM application: database-backed RAG, typed tool execution, source citations, parser boundaries, deterministic tests, Docker packaging, and CI wiring.
@@ -14,6 +16,8 @@ Not deployed yet.
 - Demo Video: pending
 
 The planned public portfolio demo runs in deterministic MockProvider mode for predictable behavior and zero API-key exposure. OpenAI can be enabled through platform secrets by setting `LLM_PROVIDER=openai` and `OPENAI_API_KEY`.
+
+Current CI status: latest `main` workflow is green. Public deployment and public smoke test are still pending.
 
 ## Why This Project Exists
 
@@ -159,7 +163,7 @@ Set `NEXUS_API_BASE_URL` to test a deployed backend.
 
 ## Deployment
 
-Deployment options are documented in `DEPLOYMENT.md`. The project is not deployed yet.
+Deployment options are documented in `DEPLOYMENT.md`. Step-by-step deployment guidance is in `DEPLOY_NOW.md`. The project is not deployed yet.
 
 ## Known Limits
 

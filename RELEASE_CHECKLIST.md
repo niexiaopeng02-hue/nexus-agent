@@ -1,6 +1,6 @@
 # Release Checklist
 
-## Code
+## Local Verification
 
 - [x] lint passed locally
 - [x] unit tests passed locally
@@ -10,7 +10,22 @@
 - [x] frontend build passed locally
 - [x] smoke test passed locally against SQLite-backed API runtime
 
-## Database
+## CI Verification
+
+- [x] backend lint passed in CI
+- [x] unit tests passed in CI
+- [x] PostgreSQL integration tests passed in CI
+- [x] pgvector extension verified in CI
+- [x] fresh Alembic migration verified in CI
+- [x] `0001` to `head` migration verified in CI
+- [x] vector retrieval verified in CI
+- [x] threshold filtering verified in CI
+- [x] persistence tests passed in CI
+- [x] evaluation pipeline passed in CI
+- [x] frontend typecheck passed in CI
+- [x] frontend production build passed in CI
+
+## Local Database Verification
 
 - [ ] migration fresh install tested against real PostgreSQL locally
 - [ ] 0001 to head upgrade tested against real PostgreSQL locally
@@ -37,6 +52,7 @@
 ## Portfolio
 
 - [ ] live URL
+- [ ] public smoke test
 - [ ] screenshots
 - [ ] demo video
 - [x] README links
@@ -46,3 +62,14 @@
 - [x] resume project copy prepared
 - [x] Upwork portfolio copy prepared
 - [x] LinkedIn/project launch post prepared
+
+## GitHub Portfolio
+
+- [ ] GitHub About description set
+- [ ] GitHub topics set
+- [x] README present
+- [x] MIT license present
+- [x] CI status is green on latest `main`
+- [ ] Live Demo URLs added after deployment
+- [ ] Real screenshots committed after deployment
+- [ ] Known limitations remain honest and current

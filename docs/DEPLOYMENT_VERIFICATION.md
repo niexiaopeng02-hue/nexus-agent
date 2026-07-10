@@ -2,6 +2,25 @@
 
 Deployment has not been completed yet. Do not mark these checks as passed until they are run against the real public environment.
 
+## Pre-deployment CI Verification
+
+Latest verified CI status: passed on `main` after commit `c1b6628`.
+
+Verified components:
+
+- Backend lint
+- Backend unit tests
+- PostgreSQL + pgvector integration tests
+- Fresh Alembic migration
+- `0001` to `head` migration path
+- pgvector extension
+- Vector search
+- Threshold filtering
+- Persistence
+- Evaluation pipeline
+- Frontend typecheck
+- Frontend production build
+
 ## Deployment Record
 
 - Deployment date: pending

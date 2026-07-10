@@ -1,6 +1,32 @@
 # Deployment
 
-NexusAgent has a React/Nginx frontend, FastAPI backend, and PostgreSQL + pgvector database. It is not deployed yet.
+NexusAgent has a React/Vite frontend, FastAPI backend, and PostgreSQL + pgvector database. It is not deployed yet.
+
+## Recommended Stack
+
+Recommended first public portfolio deployment:
+
+- Frontend: Vercel static hosting
+- Backend: Render web service
+- Database: Neon PostgreSQL with pgvector
+
+Why this stack:
+
+- Cost: suitable for a small portfolio demo, with low-cost or free-entry tiers to evaluate.
+- Deployment complexity: separates static frontend, Python backend, and managed database without requiring server administration.
+- pgvector support: Neon supports the pgvector extension and works well for PostgreSQL-backed demos.
+- HTTPS: Vercel and Render provide managed HTTPS for public URLs.
+- Maintenance: avoids VPS patching, database backups, and TLS operations for the first release.
+- Portfolio fit: easy to share separate frontend, API docs, and health URLs.
+
+Use `LLM_PROVIDER=mock` for the first public demo. It is deterministic, has no API cost, does not require exposing an OpenAI key in a public demo environment, and keeps the portfolio walkthrough stable.
+
+Fallback stack:
+
+- Single VPS with Docker Compose.
+- Use Caddy, Traefik, or Nginx for HTTPS.
+- Run the provided `docker-compose.yml`.
+- Own backups, patching, monitoring, and restart policy yourself.
 
 ## Option A: Portfolio-Friendly Managed Deployment
 
