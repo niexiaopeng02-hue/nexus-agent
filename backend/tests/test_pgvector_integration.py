@@ -26,13 +26,19 @@ def pgvector_url() -> str:
     return url
 
 
+async def reset_pg_database(engine) -> None:
+    await drop_schema(engine)
+    async with engine.begin() as conn:
+        await conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
+
+
 @pytest.fixture()
 async def pg_session():
     url = pgvector_url()
     configure_database(url)
     from app.db import session as db_session
 
-    await drop_schema(db_session.engine)
+    await reset_pg_database(db_session.engine)
     await create_schema(db_session.engine)
     async with db_session.AsyncSessionLocal() as session:
         await seed_demo_data(session, MockProvider())
@@ -45,7 +51,7 @@ async def test_pgvector_migrations_apply():
     configure_database(url)
     from app.db import session as db_session
 
-    await drop_schema(db_session.engine)
+    await reset_pg_database(db_session.engine)
     alembic_ini = Path(__file__).resolve().parents[1] / "alembic.ini"
     config = Config(str(alembic_ini))
     config.set_main_option("sqlalchemy.url", url)
@@ -55,7 +61,7 @@ async def test_pgvector_migrations_apply():
         assert revision == "0002"
         result = await session.execute(select(tables.DocumentChunk.id).limit(1))
         assert result.scalar_one_or_none() is None
-    await drop_schema(db_session.engine)
+    await reset_pg_database(db_session.engine)
 
 
 @pytest.mark.asyncio
@@ -64,7 +70,7 @@ async def test_pgvector_upgrade_from_0001_drops_legacy_64_dim_embeddings():
     configure_database(url)
     from app.db import session as db_session
 
-    await drop_schema(db_session.engine)
+    await reset_pg_database(db_session.engine)
     alembic_ini = Path(__file__).resolve().parents[1] / "alembic.ini"
     config = Config(str(alembic_ini))
     config.set_main_option("sqlalchemy.url", url)
